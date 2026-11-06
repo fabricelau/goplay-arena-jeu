@@ -417,7 +417,11 @@ function autoFire(dt){
   var range=Math.max(W,H);
   /* le nez du vaisseau suit la direction où l'on penche (ou glisse le doigt) */
   var sp0=Math.hypot(g.vx,g.vy);
-  if(sp0>25*S){var want=Math.atan2(g.vy,g.vx),d0=angDiff(want,g.heading),turn=(1.5+10*SET.turn/100)*dt;g.heading+=Math.max(-turn,Math.min(turn,d0))}
+  /* le nez vise directement où pointe le joystick (pas besoin d'attendre que le vaisseau freine) ;
+     plus l'écart est grand, plus il pivote vite : un demi-tour prend environ 0,15 s */
+  var jl=Math.hypot(joy.dx,joy.dy),want=null;
+  if(jl>.18)want=Math.atan2(joy.dy,joy.dx);else if(sp0>25*S)want=Math.atan2(g.vy,g.vx);
+  if(want!==null){var d0=angDiff(want,g.heading),turn=(2+11*SET.turn/100)*(1+1.8*Math.abs(d0)/Math.PI)*dt;g.heading+=Math.max(-turn,Math.min(turn,d0))}
   g.fireT-=dt;
   var manual=SET.fire==="manual",holding=manual&&(fb.on||keys[" "]);
   /* jauge : se recharge quand on ne tire pas */
@@ -499,7 +503,9 @@ function control(dt){
     var l=Math.hypot(joy.dx,joy.dy),dz=.12;
     if(l>dz){var n=Math.pow((l-dz)/(1-dz),1.6),k=n/l;tx=joy.dx*k*maxV;ty=joy.dy*k*maxV}
   }
-  g.vx+=(tx-g.vx)*Math.min(1,dt*7);g.vy+=(ty-g.vy)*Math.min(1,dt*7);
+  /* freinage plus franc quand on repart dans l'autre sens */
+  var acc=(tx*g.vx+ty*g.vy<0)?16:7;
+  g.vx+=(tx-g.vx)*Math.min(1,dt*acc);g.vy+=(ty-g.vy)*Math.min(1,dt*acc);
   g.px+=g.vx*dt;g.py+=g.vy*dt;
   var m=16*S;g.px=Math.max(m,Math.min(W-m,g.px));g.py=Math.max(TOP+m,Math.min(H-m-8,g.py));
   if(g.px<=m||g.px>=W-m)g.vx=0;

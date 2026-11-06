@@ -1,12 +1,12 @@
 {
- "version": "2026.11.06-202001",
+ "version": "2026.11.06-202208",
  "files": {
   "chain.html": "8aa2a530e4f401da94b20e5d637081296f83dad37d55fc7392159e5007be2bc0",
   "color.html": "02d09dd3e37cf862307f5b401ba1b0fa293d1dd3d9945fbefa3ebe0fbf155d88",
   "game.html": "2cc6dfa9716aef47405d24f95d293e9052cbe33acf9eca9413fcbc061d9e77d6",
   "laser.html": "41704f51402c0cd5a5bdb262cc5f84aeb5d1070b32b3722b9278085e2193a50c",
   "memory.html": "b423d0bfd2f0ae86155364b1a69bca3918d3ad89c14dc0bb23b446fa5242269c",
-  "pilot.html": "712f85bef53dee0ba56350ad35ff1485356b125b405be76c640ecd502c1f15e3",
+  "pilot.html": "823f2c92d6f86c47c392093a19ad10f5149751e7001d54f19a89c665c27d66db",
   "pixel.html": "17585b638b17bde59057add845da168cbc8a2212616345cacf36fd7f85c62d92"
  },
  "games": {},
