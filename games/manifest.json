@@ -1,17 +1,38 @@
 {
- "version": "2026.11.06-210329",
+ "version": "2026.11.06-210828",
  "files": {
   "chain.html": "9e2c4a82c0a2575061b4cd0114385430b9c8a59ea45a8c7e27a3c87131a5c955",
   "color.html": "097caa9152438086d30cc20ea165a70e7b8594aba95c8c9d247d50dfd2ea3828",
   "game.html": "31e27a661ed8eaf021669815251c603d853c02e4821d63f209bad5970fda40f8",
   "laser.html": "998c6fe6b5c1c7192f04e72f710a16b1a91eb13e460e54b8027c4f5ea251b9f1",
   "memory.html": "a19c426d91a3627e735a826edf6fe8dedbc697dcb3354a8c4c7d8399a5aeb444",
-  "pilot.html": "4dd8b299edd5ef4ecc19d0832cb14e5425b7ba06384c155561f0df0660d3643b",
-  "pixel.html": "0a0a0f7b4d2d09d5ff2229431f7d303fbfc474209ef54c8a12187cdb5d723050"
+  "pilot.html": "d03674781dc09175b4b3df4f7038646ae1e871f69dd6727ebaafda5a54efec73",
+  "pixel.html": "0a0a0f7b4d2d09d5ff2229431f7d303fbfc474209ef54c8a12187cdb5d723050",
+  "icons/arena-180.png": "57d3d75b08f5d6859f937eedabeaefa0c9615f7d3c0b4b248b7722e20e79b1ff",
+  "icons/arena-192.png": "a808f765663a0317da60afddb4374f5f4bd863060d9fdb0a2e4e99a51d8f721b",
+  "icons/arena-512.png": "5531cf6204d6ba6e7be62afba94a58eeea822acf252a83c1beec058663bd1481",
+  "icons/chain-180.png": "190892c849e34d262fad696f1a167dae971531af1b32a45a71f92e44543334bd",
+  "icons/chain-192.png": "b620ff1930ea24b53c6bf4b67b975f827ca9cbac4106cba6c92b99c8c947130d",
+  "icons/chain-512.png": "6fba6cca71c7777915bcdbe0e5c031f702ef9ffd764fa2f94b0887336e2d2b36",
+  "icons/color-180.png": "52d2fb01f5cee8666e7773df33c15f47c8ecf42719d9459807dcd29c1f4055be",
+  "icons/color-192.png": "49f79f8dc164103c40113951789a1a46b59589835f469c865247082ece14a376",
+  "icons/color-512.png": "79dca27cfc3e0bd9a0b66c9182a1b27ae9c9e8020f372a7718b762f946827f1c",
+  "icons/laser-180.png": "e35649ca3e6ace81a3fc0eca1fa70feeef7c88eb9abc95ca609f50edea31145f",
+  "icons/laser-192.png": "68d7fcc44b985a945b96ee705e4d0160d4a9172163772dde77c347d761cea2c9",
+  "icons/laser-512.png": "4eb40c8339cedf8947a874f5b0c35574be1be80aae10ae329fa4cd535bf4c800",
+  "icons/memory-180.png": "33793ccfc9580d91d1e81bc9e0feb37e0a8db874c0471328f9216ab17c6ae2b3",
+  "icons/memory-192.png": "120d28cd8679b9507c3cadd6c9995fddc2084d71c033dcf31e27d72a21707413",
+  "icons/memory-512.png": "c5c34d88182217c44fbe94f1d8539cc70a46515054cd053cd6a1e089624ced04",
+  "icons/pilot-180.png": "4f072a3ba31f8372df64e247ce9a6d9ff1e751d27f4d16c8b51ef6f1b70cbb48",
+  "icons/pilot-192.png": "77476e49af97fcf09aac9cdd545af4ed20dfceafa362554375c1ee92fdc20d57",
+  "icons/pilot-512.png": "a2dfc8cb6da60893ede58b1e24de8fca230d15ca0428dbc19f80e9bb60a49fe6",
+  "icons/pixel-180.png": "c8426d27f76d5ff0f6dd9fbce702ded4d0eaa491f224ff406d0dfeebcfebece1",
+  "icons/pixel-192.png": "bcddfa77a1d13405649e8c8c1103ad91dd3e42c24b57b34872d6c613e27bf1ea",
+  "icons/pixel-512.png": "b607818cb3599de76eef18b6088d10e544353566cb200773bec571a98c8c5d94"
  },
  "games": {},
  "plugin": {
-  "version": "1.5.0",
-  "sha": "b377d3330085053f8e531e09ede56be1e3a6ff85f1fe56382cea919000b4ec64"
+  "version": "1.6.0",
+  "sha": "0d54c7b12d861c6c88ed0e8c51b309109e264d28d2542d2638d235e10d29f291"
  }
 }

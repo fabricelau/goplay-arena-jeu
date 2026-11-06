@@ -4,6 +4,9 @@ Toujours vérifier plugin/goplay-arena-jeu.php avec `php -l` avant d'envoyer : l
 import hashlib, json, os, datetime
 d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "games")
 files = sorted(f for f in os.listdir(d) if f.endswith(".html"))
+icd = os.path.join(d, "icons")
+if os.path.isdir(icd):
+    files += sorted("icons/" + f for f in os.listdir(icd) if f.endswith(".png"))
 old = {}
 try: old = json.load(open(os.path.join(d, "manifest.json")))
 except Exception: pass

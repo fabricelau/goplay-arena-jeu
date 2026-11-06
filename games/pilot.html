@@ -94,6 +94,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .ship{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 6px;color:var(--text);cursor:pointer;font-family:var(--body)}
 .ship canvas{width:72px;height:72px}.ship strong{font:700 16px var(--display)}.ship span{font-size:13px;color:var(--muted);text-align:center}
 .ship.on{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}.ship.locked{cursor:default;opacity:.75}
+.by{margin-top:-8px;font:600 15px var(--body);letter-spacing:.32em;text-transform:uppercase;color:var(--muted)}
+.by b{color:var(--text);font-weight:700;text-shadow:0 0 12px rgba(61,240,255,.6)}
 .rank{font:700 17px var(--display);color:var(--bomb);min-height:22px}
 .sets{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left}
 .set{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;font-size:17px;font-weight:600}
@@ -116,6 +118,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
   <div class="box">
     <div class="eyebrow">GoPlay Arena</div>
     <h1>Pilot<br><span>Arena</span></h1>
+    <div class="by">by <b>GoPlay Arena</b></div>
     <p class="how">Pilote avec le joystick, tire avec le bouton FEU (reste appuyé pour la rafale, surveille la jauge). Ton vaisseau pointe dans la direction du joystick. Esquive tout (seul le point blanc au centre est fragile). Double appui sur le joystick : dash. Bouton violet : super-attaque. Entre chaque vague, choisis une amélioration.</p>
     <div class="legend">
       <div><i style="border-color:#3DF0FF"></i>R · Tir rapide</div>
@@ -972,8 +975,14 @@ function draw(dt){
   drawJoy();
   drawFire();
   drawSuper();
-  if(g.count>0){cx.textAlign="center";cx.textBaseline="middle";cx.fillStyle="#EDEAFF";cx.font="700 "+Math.round(70*S)+"px 'Chakra Petch',sans-serif";cx.fillText(Math.ceil(g.count),W/2,H*.42);
-    cx.font="600 "+Math.round(18*S)+"px Rajdhani,sans-serif";cx.fillStyle="#3DF0FF";cx.fillText("Pose ton pouce sur le joystick",W/2,H*.42+52*S)}
+  if(g.cPop>0)g.cPop-=dt;
+  if(g.count>0){var sc=1+(g.cPop>0?g.cPop*1.6:0);cx.textAlign="center";cx.textBaseline="middle";
+    cx.globalCompositeOperation="lighter";spr(glow("#3DF0FF"),W/2,H*.42,190*S*sc,.5);cx.globalCompositeOperation="source-over";cx.globalAlpha=1;
+    cx.fillStyle="#EDEAFF";cx.font="700 "+Math.round(84*S*sc)+"px 'Chakra Petch',sans-serif";cx.fillText(Math.ceil(g.count),W/2,H*.42);
+    cx.font="600 "+Math.round(18*S)+"px Rajdhani,sans-serif";cx.fillStyle="#3DF0FF";cx.fillText("Pose ton pouce sur le joystick",W/2,H*.42+64*S)}
+  else if(g.goT>0){g.goT-=dt;var k=1-g.goT/.9,sc2=1+k*.5;cx.globalAlpha=Math.max(0,Math.min(1,g.goT*2.5));cx.textAlign="center";cx.textBaseline="middle";
+    cx.globalCompositeOperation="lighter";spr(glow("#FF3D8B"),W/2,H*.42,260*S*sc2,.6);cx.globalCompositeOperation="source-over";cx.globalAlpha=Math.max(0,Math.min(1,g.goT*2.5));
+    cx.font="700 "+Math.round(56*S*sc2)+"px 'Chakra Petch',sans-serif";cx.fillStyle="#FFFFFF";cx.fillText("GO",W/2-62*S*sc2,H*.42);cx.fillStyle="#FF3D8B";cx.fillText("PLAY!",W/2+52*S*sc2,H*.42);cx.globalAlpha=1}
   else if(g.banner){var b=g.banner,a=Math.max(0,Math.min(1,b.t*3,(1.8-b.t)*4+.2));cx.globalAlpha=a;cx.textAlign="center";cx.textBaseline="alphabetic";
     cx.font="700 "+Math.round(32*S)+"px 'Chakra Petch',sans-serif";cx.fillStyle="#EDEAFF";cx.fillText(b.txt,W/2,H*.36);
     if(b.sub){cx.font="600 "+Math.round(18*S)+"px Rajdhani,sans-serif";cx.fillStyle="#3DF0FF";cx.fillText(b.sub,W/2,H*.36+26*S)}cx.globalAlpha=1}
@@ -984,7 +993,9 @@ function loop(now){
   if(g&&g.run&&!g.paused&&dt>0){Q.ft.push(dt);if(Q.ft.length>=90){var av=Q.ft.reduce(function(a,b){return a+b},0)/Q.ft.length;Q.ft.length=0;
     if(av>.0195&&Q.scale>1){Q.scale=Math.max(1,Q.scale-.25);resize()}}}
   if(g&&g.run&&!g.paused&&!g.choosing){
-    if(g.count>0){g.count-=dt;control(dt);if(g.count<=0){SFX.go()}}
+    if(g.count>0){var c0=Math.ceil(g.count);g.count-=dt;control(dt);var c1=Math.ceil(g.count);
+      if(g.voice&&c1!==c0&&c1>0){say(COUNT_WORDS[c1]||String(c1),1,1);SFX.tick();g.cPop=.25}
+      if(g.count<=0){SFX.go();g.goT=.9;g.cPop=.3;if(g.voice){say("Go Play!",1.15,1.05);g.voice=false}}}
     else if(g.dying>0){g.dying-=dt;update(dt*.22);if(g.dying<=0&&g.run)gameOver()}
     else if(g.slow>0){g.slow-=dt;update(dt*.3)}
     else update(dt);
@@ -1037,13 +1048,28 @@ function bumpStreak(){var o={};try{o=JSON.parse(store("gpapi_streak")||"{}")||{}
   if(o.last===t){}else if(o.last===y)o.n=(o.n|0)+1;else o.n=1;o.last=t;store("gpapi_streak",JSON.stringify(o));return o.n}
 function streakBonus(n){return n>=7?"Bulle + super-attaque pleine":n>=4?"Bulle + super-attaque à moitié":n>=2?"Bulle protectrice au départ":"Reviens demain pour un bonus"}
 function syncStreak(){var n=streak(),el=$("sStreak");if(!el)return;el.innerHTML=n?"Série : <b>"+n+" jour"+(n>1?"s":"")+"</b> · "+streakBonus(n):"Joue chaque jour : bonus de départ dès 2 jours de suite"}
+/* ---------- Voix du compte à rebours (synthèse vocale du téléphone, en anglais) ---------- */
+var VOX={v:null};
+function pickVoice(){
+  try{var vs=speechSynthesis.getVoices().filter(function(v){return /^en(-|_|$)/i.test(v.lang)});if(!vs.length)return null;
+    var pref=[/natural/i,/neural/i,/premium/i,/enhanced/i,/siri/i,/samantha/i,/daniel/i,/google uk english male/i,/google us english/i,/aaron|nicky|karen|serena|arthur|martha/i];
+    for(var i=0;i<pref.length;i++)for(var j=0;j<vs.length;j++)if(pref[i].test(vs[j].name))return vs[j];
+    return vs.filter(function(v){return /en-(US|GB)/i.test(v.lang)})[0]||vs[0]}catch(e){return null}
+}
+try{speechSynthesis.onvoiceschanged=function(){VOX.v=pickVoice()};VOX.v=pickVoice()}catch(e){}
+function say(txt,pitch,rate){
+  if(muted||SET.sfx<=0)return;
+  try{if(!window.speechSynthesis)return;speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(txt);if(!VOX.v)VOX.v=pickVoice();if(VOX.v)u.voice=VOX.v;u.lang=VOX.v?VOX.v.lang:"en-US";
+    u.volume=Math.min(1,SET.sfx/80);u.pitch=pitch||1;u.rate=rate||1;speechSynthesis.speak(u)}catch(e){}
+}
+var COUNT_WORDS={3:"Three",2:"Two",1:"One"};
 /* ---------- Écrans ---------- */
 function show(id){["scrStart","scrBoard","scrOver","scrPause","scrSet","scrQuit","scrUp","scrShip"].forEach(function(s){$(s).hidden=s!==id});$("hud").hidden=id!==null}
 function best(){return parseInt(store("gpapi_best")||"0",10)||0}
 function syncBest(){var b=best();$("sBest").innerHTML=b?"Ton record : <b>"+fmt(b)+"</b>":"Le classement t'attend"}
 function start(){
   audio();myId=null;
-  var go=function(){var n=bumpStreak();newGame();g.skin=curShip();g.count=3;$("combo").textContent="";show(null);musStart();
+  var go=function(){var n=bumpStreak();newGame();g.skin=curShip();g.count=3;g.voice=true;say("Three",1,1);g.cPop=.25;$("combo").textContent="";show(null);musStart();
     if(n>=2){g.pw.bubble=true;if(n>=4)g.sup=n>=7?1:.5;g.banner={txt:"SÉRIE "+n+" JOURS",sub:streakBonus(n),t:2.4}}};
   go();
 }
@@ -1118,7 +1144,7 @@ $("hSet").onclick=function(){audio();openSet("game")};
 $("bSetReset").onclick=function(){for(var k in SET_DEF)SET[k]=SET_DEF[k];saveSet();fillSet();joyPlace();fbPlace();sfxBus();if(MUS.out){try{MUS.out.gain.setTargetAtTime(musGain(),AC.currentTime,.05)}catch(e){}}};
 $("bSetBack").onclick=function(){if(setFrom==="game"&&g&&g.run){resume()}else{syncBest();show("scrStart")}};
 function pause(){if(g&&g.run&&!g.paused&&!g.choosing){g.paused=true;musStop();show("scrPause")}}
-function resume(){if(g&&g.paused){g.paused=false;last=performance.now();show(null);g.count=Math.max(g.count,1.5);musStart()}}
+function resume(){if(g&&g.paused){g.voice=false;g.paused=false;last=performance.now();show(null);g.count=Math.max(g.count,1.5);musStart()}}
 $("bResume").onclick=function(){audio();resume()};
 /* Quitter en pleine partie : pause + confirmation, puis retour au menu sans enregistrer */
 $("hPause").onclick=function(){audio();pause()};
