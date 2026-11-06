@@ -229,7 +229,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <div class="sets">
       <label class="set" for="r_move"><span>Vitesse du vaisseau</span><b id="v_move"></b><input type="range" id="r_move" min="20" max="150" step="5"></label>
       <label class="set" for="r_turn"><span>Vitesse de rotation</span><b id="v_turn"></b><input type="range" id="r_turn" min="10" max="150" step="5"></label>
-      <div class="set" id="row_side"><span>Côté du bouton FEU (en paysage, le joystick va de l'autre côté)</span><span></span><div class="seg"><button type="button" data-set="side" data-v="left">Gauche</button><button type="button" data-set="side" data-v="right">Droite</button></div></div>
+      <div class="set" id="row_side"><span>Côté du bouton FEU (le joystick se place de l'autre côté)</span><span></span><div class="seg"><button type="button" data-set="side" data-v="left">Gauche</button><button type="button" data-set="side" data-v="right">Droite</button></div></div>
       <label class="set" for="r_cad"><span>Cadence de tir</span><b id="v_cad"></b><input type="range" id="r_cad" min="50" max="150" step="5"></label>
       <div class="set"><span>Vibrations</span><span></span><div class="seg"><button type="button" data-set="vib" data-v="on">Oui</button><button type="button" data-set="vib" data-v="off">Non</button></div></div>
       <label class="set" for="r_music"><span>Volume de la musique</span><b id="v_music"></b><input type="range" id="r_music" min="0" max="100" step="5"></label>
@@ -471,7 +471,9 @@ function joyPlace(){
     /* paysage : joystick sur le côté opposé au bouton FEU (à droite par défaut), pour les deux pouces */
     var right=!(SET.fire==="manual"&&SET.side==="right"),off=joy.r+34*S+20;
     joy.x=right?W-off:off;joy.y=H-joy.r-22*S-pb;
-  }else{joy.x=W/2;joy.y=H-joy.r-26*S-pb}
+  }else{
+    /* portrait : joystick à droite (côté opposé au bouton FEU) */
+    var rt=!(SET.fire==="manual"&&SET.side==="right"),off2=joy.r+30*S;joy.x=rt?W-off2:off2;joy.y=H-joy.r-26*S-pb}
 }
 function joySet(px,py){var dx=(px-joy.x)/joy.r,dy=(py-joy.y)/joy.r,l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}joy.dx=dx;joy.dy=dy}
 var keys={};
