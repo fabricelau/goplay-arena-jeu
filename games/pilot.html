@@ -338,18 +338,19 @@ function boomNoise(){if(BOOM.nb)return BOOM.nb;var n=AC.sampleRate*1.6,b=AC.crea
 function softBoom(size){try{boomCore(size)}catch(e){}}
 function boomCore(size){
   if(muted||!AC)return;var t=AC.currentTime;
-  /* plusieurs explosions en même temps : on adoucit au lieu d'empiler */
-  if(t-BOOM.last<.05){BOOM.stack++;if(BOOM.stack>3)return}else BOOM.stack=0;BOOM.last=t;
-  var big=size||1,vol=Math.min(.5,.16*big)/(1+BOOM.stack*.6),dur=.38+.3*big+Math.random()*.12,rate=.85+Math.random()*.3;
-  var src=AC.createBufferSource();src.buffer=boomNoise();src.playbackRate.value=rate;
-  var lp=AC.createBiquadFilter();lp.type="lowpass";lp.Q.value=.7;
-  lp.frequency.setValueAtTime(1600+900*Math.random(),t);lp.frequency.exponentialRampToValueAtTime(140,t+dur);
-  var gn=AC.createGain();gn.gain.setValueAtTime(.0001,t);gn.gain.exponentialRampToValueAtTime(vol,t+.012);gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
-  src.connect(lp);lp.connect(gn);gn.connect(sfxBus());src.start(t,Math.random()*.5);src.stop(t+dur+.05);
-  /* petit coup grave */
-  var o=AC.createOscillator(),og=AC.createGain();o.type="sine";o.frequency.setValueAtTime(110/Math.sqrt(big)*rate,t);o.frequency.exponentialRampToValueAtTime(38,t+.25*big);
-  og.gain.setValueAtTime(.0001,t);og.gain.exponentialRampToValueAtTime(vol*.9,t+.01);og.gain.exponentialRampToValueAtTime(.0001,t+.3*big);
-  o.connect(og);og.connect(sfxBus());o.start(t);o.stop(t+.35*big);
+  if(t-BOOM.last<.045){BOOM.stack++;if(BOOM.stack>3)return}else BOOM.stack=0;BOOM.last=t;
+  var big=size||1,vol=Math.min(.55,.2*big)/(1+BOOM.stack*.7),r=.9+Math.random()*.22,out=sfxBus(),nb=boomNoise();
+  function env(node,peak,att,dec){var gn=AC.createGain();gn.gain.setValueAtTime(.0001,t);gn.gain.exponentialRampToValueAtTime(peak,t+att);gn.gain.exponentialRampToValueAtTime(.0001,t+dec);node.connect(gn);gn.connect(out);return gn}
+  /* 1. claquement net */
+  var s1=AC.createBufferSource();s1.buffer=nb;var hp=AC.createBiquadFilter();hp.type="highpass";hp.frequency.value=2600;s1.connect(hp);env(hp,vol*.55,.002,.045);s1.start(t,Math.random());s1.stop(t+.06);
+  /* 2. corps de l'explosion : souffle qui descend */
+  var s2=AC.createBufferSource();s2.buffer=nb;s2.playbackRate.value=r;var bp=AC.createBiquadFilter();bp.type="bandpass";bp.Q.value=1.1;
+  bp.frequency.setValueAtTime(1300*r,t);bp.frequency.exponentialRampToValueAtTime(160,t+.32*big);s2.connect(bp);env(bp,vol*1.3,.006,.34*big+.08);s2.start(t,Math.random()*.4);s2.stop(t+.5*big+.1);
+  /* 3. coup grave qui claque dans la poitrine */
+  var o=AC.createOscillator();o.type="sine";o.frequency.setValueAtTime(150*r,t);o.frequency.exponentialRampToValueAtTime(42,t+.13*big);env(o,vol*.95,.004,.18*big);o.start(t);o.stop(t+.22*big);
+  /* 4. petites étincelles qui crépitent */
+  for(var i=0;i<3;i++){var tt=t+.03+Math.random()*.14,p=AC.createOscillator(),pg=AC.createGain(),fq=2200+Math.random()*2600;p.type="triangle";p.frequency.setValueAtTime(fq,tt);p.frequency.exponentialRampToValueAtTime(fq*.6,tt+.05);
+    pg.gain.setValueAtTime(.0001,tt);pg.gain.exponentialRampToValueAtTime(vol*.12,tt+.003);pg.gain.exponentialRampToValueAtTime(.0001,tt+.06);p.connect(pg);pg.connect(out);p.start(tt);p.stop(tt+.08)}
 }
 var SFX={
   near:function(c){var f=660+Math.min(c,10)*70;tone(f,f*1.5,.08,"triangle",.06)},
@@ -387,46 +388,64 @@ $("bMute").onclick=toggleMute;$("hMute").onclick=toggleMute;syncMute();
 /* ---------- Musique synthwave générée en direct (aucun fichier) ---------- */
 var MUS={on:true,playing:false,step:0,next:0,timer:null,out:null,level:1,nb:null};
 function musLevel(){if(!g)return 1;if(g.bossOn)return 4;return g.wave>=4?3:g.wave>=2?2:1}
-function musBpm(){return 124+Math.min(g?g.wave:0,12)*1.2+(MUS.level===4?6:0)}
+function musBpm(){return 132+Math.min(g?g.wave:0,12)*1.1+(MUS.level===4?6:0)}
 var CHORDS=[[110,130.81,164.81],[87.31,110,130.81],[130.81,164.81,196],[98,123.47,146.83]]; /* La m, Fa, Do, Sol */
 var BOSSCH=[[110,130.81,164.81],[116.54,138.59,174.61],[103.83,123.47,155.56],[110,130.81,164.81]];
 function musNoise(){if(MUS.nb)return MUS.nb;var n=AC.sampleRate*.5,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=Math.random()*2-1;return MUS.nb=b}
-function mNote(type,f,t,dur,vol,cut,glideTo){
+function mNote(type,f,t,dur,vol,cut,glideTo,bus){
   var o=AC.createOscillator(),gn=AC.createGain(),fl=AC.createBiquadFilter();o.type=type;o.frequency.setValueAtTime(f,t);if(glideTo)o.frequency.exponentialRampToValueAtTime(glideTo,t+dur);
   fl.type="lowpass";fl.frequency.setValueAtTime(cut||2000,t);fl.Q.value=4;
   gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(vol,t+.005);gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
-  o.connect(fl);fl.connect(gn);gn.connect(MUS.out);o.start(t);o.stop(t+dur+.05);
+  o.connect(fl);fl.connect(gn);gn.connect(bus||MUS.out);o.start(t);o.stop(t+dur+.05);
 }
 function mNoise(t,dur,vol,type,freq){
   var s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=musNoise();f.type=type;f.frequency.value=freq;
   gn.gain.setValueAtTime(vol,t);gn.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(gn);gn.connect(MUS.out);s.start(t);s.stop(t+dur+.02);
 }
 function mKick(t){mNote("sine",160,t,.22,.9,800,42)}
+/* Mélodie accrocheuse (La mineur, croches) : 4 mesures La m – Fa – Do – Sol, en demi-tons depuis La 4 */
+var HOOK=[[0,3,7,12,10,7,3,7],[-4,0,5,8,7,5,0,5],[3,7,10,15,12,10,7,10],[-2,2,7,10,14,12,10,7]];
+var HOOK_B=[[12,null,10,12,15,null,12,10],[8,null,7,8,12,null,8,7],[15,null,14,15,19,null,15,14],[14,12,10,7,10,12,14,null]];
+function semi(n){return 440*Math.pow(2,n/12)}
+function mDuck(t){if(!MUS.bassBus)return;var gg=MUS.bassBus.gain;gg.cancelScheduledValues(t);gg.setValueAtTime(.25,t);gg.linearRampToValueAtTime(1,t+.16)}
 function musStep(st,t,s16){
-  var lv=MUS.level,beat=st%16,bar=Math.floor(st/16)%4,ch=(lv===4?BOSSCH:CHORDS)[bar],root=ch[0];
-  if(beat%4===0)mKick(t);
-  if(lv>=2&&(beat===4||beat===12)){mNoise(t,.16,.35,"bandpass",1700);mNoise(t+.012,.12,.2,"bandpass",2600)}
-  if(beat%4===2)mNoise(t,.05,.18,"highpass",7000);
-  else if(lv>=3)mNoise(t,.025,.07,"highpass",9000);
-  /* basse : croches décalées qui pompent entre les coups de grosse caisse */
-  if(beat%4!==0){var oct=(beat%4===3)?2:1;mNote("sawtooth",root*oct/2,t,s16*.9,.16,lv>=3?900:650)}
-  /* nappe au début de chaque mesure */
-  if(beat===0)ch.forEach(function(f,i){mNote("sawtooth",f*2*(1+(i-1)*.003),t,s16*15,.025,1400)});
-  /* arpège : à partir de la vague 2 */
-  if(lv>=2){var pat=[0,1,2,1,2,0,1,2],seq=ch.concat([ch[0]*2]),f=seq[pat[beat%8]%seq.length]*4;if(lv===4&&beat%2)f*=1.5;mNote("square",f,t,s16*.8,lv>=3?.05:.035,lv>=3?3200:2200)}
-  /* mélodie haute en vague 4+ et boss */
-  if(lv>=3&&beat%8===6)mNote("triangle",ch[2]*8,t,s16*2.5,.04,5000);
-  if(lv===4&&beat===14)mNote("sawtooth",ch[0]*4,t,s16*2,.05,3000,ch[0]*2);
+  var lv=MUS.level,beat=st%16,barN=Math.floor(st/16),bar=barN%4,ch=(lv===4?BOSSCH:CHORDS)[bar],root=ch[0],fill=(barN%8===7);
+  /* batterie : grosse caisse 4 temps (sauf breaks), claps 2 et 4, charleston ouvert sur les contretemps */
+  if(beat%4===0&&!(fill&&beat>=12)){mKick(t);mDuck(t)}
+  if(beat===4||beat===12){mNoise(t,.14,.32,"bandpass",1800);mNoise(t+.01,.1,.18,"bandpass",2900)}
+  if(beat%4===2)mNoise(t,.11,.14,"highpass",6500);
+  else if(lv>=2&&beat%2===1)mNoise(t,.02,.06,"highpass",9500);
+  if(fill&&beat>=8){mNoise(t,.07,.12+beat*.012,"bandpass",1400+beat*120)}
+  /* basse qui pompe (coupée sous la grosse caisse) */
+  var bf=root/2;
+  if(lv>=3){mNote("sawtooth",beat%2?bf*2:bf,t,s16*.85,.15,1100,null,MUS.bassBus)}
+  else if(beat%4!==0){mNote("sawtooth",beat%4===3?bf*2:bf,t,s16*.9,.17,800,null,MUS.bassBus)}
+  /* nappe */
+  if(beat===0)ch.forEach(function(f,i){mNote("sawtooth",f*2*(1+(i-1)*.004),t,s16*15,.022,1600)});
+  /* le refrain : la mélodie principale, avec écho */
+  if(beat%2===0){var n=HOOK[bar][beat/2];
+    if(lv===4)n=[0,1,7,12,13,12,7,1][beat/2]+(bar%2?-1:0);
+    var vol=lv>=2?.055:.04;mNote("square",semi(n),t,s16*1.6,vol,lv>=3?4200:3000,null,MUS.lead);
+    if(lv>=3)mNote("sawtooth",semi(n+12)*1.003,t,s16*1.2,.018,5000,null,MUS.lead)}
+  /* contre-chant aigu en vague 4+ */
+  if(lv>=3&&lv<4&&beat%2===1){var m=HOOK_B[bar][(beat-1)/2];if(m!==null)mNote("triangle",semi(m+12),t,s16*.9,.03,6000)}
+  /* arpège rapide (vague 2+) */
+  if(lv>=2){var seq=[ch[0]*4,ch[1]*4,ch[2]*4,ch[1]*4],f=seq[beat%4]*(beat>=8&&lv>=3?2:1);mNote("square",f,t,s16*.55,.018,2600)}
+  /* montée avant la reprise */
+  if(fill&&beat===12)mNote("sawtooth",root,t,s16*4,.06,4000,root*4);
 }
 function musTick(){
   if(!MUS.playing||!AC)return;
   MUS.level=musLevel();var s16=60/musBpm()/4;
   while(MUS.next<AC.currentTime+.15){musStep(MUS.step,MUS.next,s16);MUS.next+=s16;MUS.step++}
 }
-function musStart(){
+function musStart(){try{musStartCore()}catch(e){MUS.playing=false}}
+function musStartCore(){
   if(!AC||SET.music<=0||muted||MUS.playing)return;
   var comp=AC.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(AC.destination);
   MUS.out=AC.createGain();MUS.out.gain.setValueAtTime(0,AC.currentTime);MUS.out.gain.linearRampToValueAtTime(musGain(),AC.currentTime+.8);MUS.out.connect(comp);
+  MUS.bassBus=AC.createGain();MUS.bassBus.connect(MUS.out);
+  MUS.lead=AC.createGain();MUS.lead.connect(MUS.out);var dl=AC.createDelay(1);dl.delayTime.value=60/musBpm()*.75;var fbk=AC.createGain();fbk.gain.value=.32;var dlf=AC.createBiquadFilter();dlf.type="lowpass";dlf.frequency.value=2500;MUS.lead.connect(dl);dl.connect(dlf);dlf.connect(fbk);fbk.connect(dl);dlf.connect(MUS.out);
   MUS.comp=comp;MUS.next=AC.currentTime+.08;MUS.t0=MUS.next;MUS.step=0;MUS.playing=true;MUS.timer=setInterval(musTick,25);musTick();
 }
 function musStop(){
