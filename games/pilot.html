@@ -78,6 +78,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .set{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;font-size:17px;font-weight:600}
 .set b{font-family:var(--display);color:var(--cyan);font-variant-numeric:tabular-nums}
 .set input{grid-column:1/-1;width:100%;accent-color:var(--cyan);height:28px}
+.seg{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg button{font:700 15px var(--body);letter-spacing:.04em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:10px;padding:10px 0;cursor:pointer}
+.seg button[aria-pressed="true"]{color:#06182E;background:var(--cyan);border-color:var(--cyan)}
 </style>
 
 <canvas id="c" aria-label="Espace de vol"></canvas>
@@ -92,7 +95,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
   <div class="box">
     <div class="eyebrow">GoPlay Arena</div>
     <h1>Arena<br><span>Pilot</span></h1>
-    <p class="how">Pilote avec le joystick en bas de l'écran : ton vaisseau pointe dans la direction choisie et tire tout seul dès qu'un ennemi est en face. Esquive les vaisseaux et leurs boules de feu (seul le point blanc au centre est fragile) et ramasse les superpouvoirs.</p>
+    <p class="how">Pilote avec le joystick, tire avec le bouton FEU (reste appuyé pour la rafale, surveille la jauge). Ton vaisseau pointe dans la direction du joystick. Esquive les vaisseaux et leurs boules de feu (seul le point blanc au centre est fragile) et ramasse les superpouvoirs.</p>
     <div class="legend">
       <div><i style="border-color:#3DF0FF"></i>R · Tir rapide</div>
       <div><i style="border-color:#FFB020"></i>E · Éventail</div>
@@ -143,6 +146,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <div class="sets">
       <label class="set" for="r_move"><span>Vitesse du vaisseau</span><b id="v_move"></b><input type="range" id="r_move" min="20" max="150" step="5"></label>
       <label class="set" for="r_turn"><span>Vitesse de rotation</span><b id="v_turn"></b><input type="range" id="r_turn" min="10" max="150" step="5"></label>
+      <div class="set"><span>Tir</span><span></span><div class="seg"><button type="button" data-set="fire" data-v="manual">Bouton FEU</button><button type="button" data-set="fire" data-v="auto">Automatique</button></div></div>
+      <div class="set" id="row_side"><span>Côté du bouton FEU</span><span></span><div class="seg"><button type="button" data-set="side" data-v="left">Gauche</button><button type="button" data-set="side" data-v="right">Droite</button></div></div>
+      <label class="set" for="r_cad"><span>Cadence de tir</span><b id="v_cad"></b><input type="range" id="r_cad" min="50" max="150" step="5"></label>
       <label class="set" for="r_music"><span>Volume de la musique</span><b id="v_music"></b><input type="range" id="r_music" min="0" max="100" step="5"></label>
       <label class="set" for="r_sfx"><span>Volume des effets</span><b id="v_sfx"></b><input type="range" id="r_sfx" min="0" max="100" step="5"></label>
     </div>
@@ -202,8 +208,9 @@ function renderBoard(el){
 function fmt(n){return Math.round(n).toLocaleString("fr-FR")}
 
 /* ---------- Réglages (mémorisés sur le téléphone) ---------- */
-var SET_DEF={move:60,turn:60,music:60,sfx:80};
-var SET=(function(){var o={};try{o=JSON.parse(store("gpapi_set")||"{}")||{}}catch(e){}var r={};for(var k in SET_DEF)r[k]=typeof o[k]==="number"?Math.max(0,Math.min(150,o[k])):SET_DEF[k];return r})();
+var SET_DEF={move:60,turn:60,music:60,sfx:80,cad:100,fire:"manual",side:"left"};
+var SET_OPT={fire:["manual","auto"],side:["left","right"]};
+var SET=(function(){var o={};try{o=JSON.parse(store("gpapi_set")||"{}")||{}}catch(e){}var r={};for(var k in SET_DEF){if(SET_OPT[k])r[k]=SET_OPT[k].indexOf(o[k])>=0?o[k]:SET_DEF[k];else r[k]=typeof o[k]==="number"?Math.max(0,Math.min(150,o[k])):SET_DEF[k]}return r})();
 var BUS=null;
 function sfxBus(){if(!AC)return null;if(!BUS){BUS=AC.createGain();BUS.connect(AC.destination)}BUS.gain.value=SET.sfx/100;return BUS}
 function musGain(){return .9*SET.music/100}
@@ -301,6 +308,8 @@ function musStop(){
 
 /* ---------- Commandes : joystick rond, transparent, en bas au milieu ---------- */
 var joy={on:false,id:null,dx:0,dy:0,x:0,y:0,r:52};
+var fb={on:false,id:null,x:0,y:0,r:38,energy:1,rest:0,flash:0};
+function fbPlace(){fb.r=38*S;var off=fb.r+22*S;fb.x=SET.side==="right"?W-off:off;fb.y=joy.y}
 function joyPlace(){joy.r=52*S;joy.x=W/2;joy.y=H-joy.r-26*S-(parseFloat(getComputedStyle(document.documentElement).paddingBottom)||0)}
 function joySet(px,py){var dx=(px-joy.x)/joy.r,dy=(py-joy.y)/joy.r,l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}joy.dx=dx;joy.dy=dy}
 var keys={};
@@ -313,7 +322,7 @@ function resize(){
   DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cx.setTransform(DPR,0,0,DPR,0,0);
   S=Math.max(.85,Math.min(1.5,Math.min(W,H)/400));
-  joyPlace();
+  joyPlace();fbPlace();
   stars=[];for(var i=0;i<60;i++)stars.push({x:Math.random()*W,y:Math.random()*H,z:.3+Math.random()*1.4});
   bg=document.createElement("canvas");bg.width=cv.width;bg.height=cv.height;var b=bg.getContext("2d");b.setTransform(DPR,0,0,DPR,0,0);
   b.fillStyle="#07051A";b.fillRect(0,0,W,H);
@@ -336,7 +345,7 @@ var g=null,last=0;
 function newGame(){
   g={run:true,paused:false,count:0,score:0,wave:0,lives:3,t:0,inv:0,near:0,nearChain:0,lastNear:-9,
      px:W/2,py:(H+TOP)/2,vx:0,vy:0,bank:0,en:[],balls:[],picks:[],parts:[],texts:[],toSpawn:0,spawnT:0,between:0,banner:null,shake:0,red:0,flash:0,trail:[],pickPlan:[],dodged:0,heading:-Math.PI/2,lasers:[],fireT:0,kills:0,shots:0,pw:{rapid:0,spread:0,slow:0,pierce:0,bubble:false},pwT:6,powers:0};
-  joy.on=false;joy.dx=joy.dy=0;
+  joy.on=false;joy.dx=joy.dy=0;fb.on=false;fb.id=null;fb.energy=1;fb.rest=0;
   startWave(1);
 }
 function startWave(w){
@@ -398,16 +407,22 @@ function autoFire(dt){
   var sp0=Math.hypot(g.vx,g.vy);
   if(sp0>25*S){var want=Math.atan2(g.vy,g.vx),d0=angDiff(want,g.heading),turn=(1.5+10*SET.turn/100)*dt;g.heading+=Math.max(-turn,Math.min(turn,d0))}
   g.fireT-=dt;
+  var manual=SET.fire==="manual",holding=manual&&(fb.on||keys[" "]);
+  /* jauge : se recharge quand on ne tire pas */
+  if(manual){if(holding)fb.rest=0;else{fb.rest+=dt;if(fb.rest>.3)fb.energy=Math.min(1,fb.energy+dt*.45)}}
   if(g.fireT<=0){
-    /* tire seulement si un ennemi est dans le cône avant */
     var ok=false;
-    for(var j=0;j<g.en.length&&!ok;j++){var o=g.en[j],a=Math.atan2(o.y-g.py,o.x-g.px),dist=Math.hypot(o.x-g.px,o.y-g.py);
+    if(manual)ok=holding;
+    /* tir automatique : seulement si un ennemi est dans le cône avant */
+    else for(var j=0;j<g.en.length&&!ok;j++){var o=g.en[j],a=Math.atan2(o.y-g.py,o.x-g.px),dist=Math.hypot(o.x-g.px,o.y-g.py);
       if(dist<range&&Math.abs(angDiff(a,g.heading))<Math.atan2(o.r+10*S,dist)+.1)ok=true}
     if(ok){
       var sp=900*S,nx=Math.cos(g.heading),ny=Math.sin(g.heading),lvl=g.wave>=8?2:g.wave>=4?1:0;
       var spread=g.pw.spread>0?[-.32,-.16,0,.16,.32]:lvl===2?[-.09,0,.09]:lvl===1?[-.05,.05]:[0];
       spread.forEach(function(o){var h=g.heading+o;g.lasers.push({x:g.px+nx*18*S,y:g.py+ny*18*S,vx:Math.cos(h)*sp,vy:Math.sin(h)*sp,t:0,pierce:g.pw.pierce>0,hit:[]})});
-      g.shots++;g.fireT=g.pw.rapid>0?.055:.13;SFX.pew();
+      var iv=(g.pw.rapid>0?.055:.13)*100/Math.max(30,SET.cad);
+      if(manual){if(fb.energy>0){fb.energy=Math.max(0,fb.energy-.035)}else{iv*=2.6}fb.flash=.08}
+      g.shots++;g.fireT=iv;SFX.pew();
     }
   }
   for(var k=g.lasers.length-1;k>=0;k--){
@@ -571,6 +586,22 @@ function drawPowerHud(){
     cx.fillStyle=P.c;cx.fillRect(x,y+w-4*S,w*it.f,4*S);
     cx.font="700 "+Math.round(15*S)+"px 'Chakra Petch',sans-serif";cx.textAlign="center";cx.textBaseline="middle";cx.fillText(P.l,x+w/2,y+w/2-2*S)});
 }
+function drawFire(){
+  if(SET.fire!=="manual")return;
+  var x=fb.x,y=fb.y,r=fb.r,e=fb.energy,empty=e<=0,col=empty?"#FF3D5E":e<.3?"#FFB020":"#3DF0FF";
+  if(fb.flash>0)fb.flash-=1/60;
+  cx.beginPath();cx.arc(x,y,r,0,7);cx.fillStyle=fb.on?"rgba(61,240,255,.16)":"rgba(255,255,255,.06)";cx.fill();
+  cx.lineWidth=1.5*S;cx.strokeStyle="rgba(255,255,255,.22)";cx.stroke();
+  /* jauge de recharge autour du bouton */
+  cx.beginPath();cx.arc(x,y,r+6*S,0,7);cx.strokeStyle="rgba(255,255,255,.08)";cx.lineWidth=5*S;cx.stroke();
+  if(e>0){cx.beginPath();cx.arc(x,y,r+6*S,-Math.PI/2,-Math.PI/2+Math.PI*2*e);cx.strokeStyle=col;cx.lineWidth=5*S;cx.stroke()}
+  else{var bl=Math.floor(performance.now()/180)%2;cx.beginPath();cx.arc(x,y,r+6*S,0,7);cx.strokeStyle=bl?"rgba(255,61,94,.8)":"rgba(255,61,94,.25)";cx.lineWidth=5*S;cx.stroke()}
+  /* viseur */
+  cx.strokeStyle=fb.flash>0?"#FFFFFF":col;cx.lineWidth=2*S;cx.beginPath();cx.arc(x,y,r*.38,0,7);cx.stroke();
+  for(var i=0;i<4;i++){var a=i*Math.PI/2;cx.beginPath();cx.moveTo(x+Math.cos(a)*r*.2,y+Math.sin(a)*r*.2);cx.lineTo(x+Math.cos(a)*r*.58,y+Math.sin(a)*r*.58);cx.stroke()}
+  cx.fillStyle=empty?"#FF3D5E":"rgba(237,234,255,.75)";cx.font="700 "+Math.round(10*S)+"px 'Chakra Petch',sans-serif";cx.textAlign="center";cx.textBaseline="middle";
+  cx.fillText(empty?"RECHARGE":"FEU",x,y+r+17*S);
+}
 function drawJoy(){
   var x=joy.x,y=joy.y,r=joy.r,kx=x+joy.dx*r*.62,ky=y+joy.dy*r*.62;
   cx.beginPath();cx.arc(x,y,r,0,7);cx.fillStyle=joy.on?"rgba(61,240,255,.07)":"rgba(255,255,255,.04)";cx.fill();
@@ -638,6 +669,7 @@ function draw(dt){
   if(g.flash>0){cx.fillStyle="rgba(255,255,255,"+(g.flash*.6)+")";cx.fillRect(0,0,W,H);g.flash=Math.max(0,g.flash-dt)}
   drawPowerHud();
   drawJoy();
+  drawFire();
   if(g.count>0){cx.textAlign="center";cx.textBaseline="middle";cx.fillStyle="#EDEAFF";cx.font="700 "+Math.round(70*S)+"px 'Chakra Petch',sans-serif";cx.fillText(Math.ceil(g.count),W/2,H*.42);
     cx.font="600 "+Math.round(18*S)+"px Rajdhani,sans-serif";cx.fillStyle="#3DF0FF";cx.fillText("Pose ton pouce sur le joystick",W/2,H*.42+52*S)}
   else if(g.banner){var b=g.banner,a=Math.max(0,Math.min(1,b.t*3,(1.8-b.t)*4+.2));cx.globalAlpha=a;cx.textAlign="center";cx.textBaseline="alphabetic";
@@ -655,9 +687,10 @@ function loop(now){
 requestAnimationFrame(loop);
 cv.addEventListener("pointerdown",function(e){e.preventDefault();if(g&&g.paused){resume();return}
   /* le joystick s'attrape dans une large zone autour du cercle */
-  if(Math.hypot(e.clientX-joy.x,e.clientY-joy.y)<joy.r*1.9&&!joy.on){joy.on=true;joy.id=e.pointerId;joySet(e.clientX,e.clientY);try{cv.setPointerCapture(e.pointerId)}catch(_){}}},{passive:false});
+  if(SET.fire==="manual"&&!fb.on&&Math.hypot(e.clientX-fb.x,e.clientY-fb.y)<fb.r*1.35){fb.on=true;fb.id=e.pointerId;if(g&&g.fireT>.02&&fb.energy>0)g.fireT=0;try{cv.setPointerCapture(e.pointerId)}catch(_){}return}
+  if(Math.hypot(e.clientX-joy.x,e.clientY-joy.y)<joy.r*1.6&&!joy.on){joy.on=true;joy.id=e.pointerId;joySet(e.clientX,e.clientY);try{cv.setPointerCapture(e.pointerId)}catch(_){}}},{passive:false});
 cv.addEventListener("pointermove",function(e){if(joy.on&&e.pointerId===joy.id)joySet(e.clientX,e.clientY)});
-function joyUp(e){if(e.pointerId===joy.id){joy.on=false;joy.id=null;joy.dx=joy.dy=0}}
+function joyUp(e){if(e.pointerId===joy.id){joy.on=false;joy.id=null;joy.dx=joy.dy=0}if(e.pointerId===fb.id){fb.on=false;fb.id=null}}
 cv.addEventListener("pointerup",joyUp);cv.addEventListener("pointercancel",joyUp);
 
 /* ---------- Écrans ---------- */
@@ -702,18 +735,20 @@ $("bBoardBack").onclick=function(){syncBest();show("scrStart")};
 
 /* ---------- Menu Réglages ---------- */
 var setFrom="start";
-function fillSet(){["move","turn","music","sfx"].forEach(function(k){$("r_"+k).value=SET[k];$("v_"+k).textContent=SET[k]+" %"})}
-["move","turn","music","sfx"].forEach(function(k){
+function fillSet(){syncChoice();["move","turn","music","sfx","cad"].forEach(function(k){$("r_"+k).value=SET[k];$("v_"+k).textContent=SET[k]+" %"})}
+["move","turn","music","sfx","cad"].forEach(function(k){
   $("r_"+k).addEventListener("input",function(){
     SET[k]=Math.round(+this.value);$("v_"+k).textContent=SET[k]+" %";saveSet();audio();
     if(k==="sfx"){sfxBus();clearTimeout(fillSet.t);fillSet.t=setTimeout(function(){SFX.pick()},120)}
     if(k==="music"&&MUS.out){try{MUS.out.gain.setTargetAtTime(musGain(),AC.currentTime,.05)}catch(e){}if(SET.music<=0)musStop()}
   });
 });
+function syncChoice(){document.querySelectorAll("[data-set]").forEach(function(b){b.setAttribute("aria-pressed",String(SET[b.dataset.set]===b.dataset.v))});$("row_side").hidden=SET.fire!=="manual";fbPlace()}
+document.querySelectorAll("[data-set]").forEach(function(b){b.addEventListener("click",function(){SET[b.dataset.set]=b.dataset.v;saveSet();syncChoice();audio();SFX.pick()})});
 function openSet(from){setFrom=from;fillSet();if(from==="game"&&g&&g.run&&!g.paused){g.paused=true;musStop()}show("scrSet")}
 $("bSet").onclick=function(){audio();openSet("start")};
 $("hSet").onclick=function(){audio();openSet("game")};
-$("bSetReset").onclick=function(){for(var k in SET_DEF)SET[k]=SET_DEF[k];saveSet();fillSet();sfxBus();if(MUS.out){try{MUS.out.gain.setTargetAtTime(musGain(),AC.currentTime,.05)}catch(e){}}};
+$("bSetReset").onclick=function(){for(var k in SET_DEF)SET[k]=SET_DEF[k];saveSet();fillSet();fbPlace();sfxBus();if(MUS.out){try{MUS.out.gain.setTargetAtTime(musGain(),AC.currentTime,.05)}catch(e){}}};
 $("bSetBack").onclick=function(){if(setFrom==="game"&&g&&g.run){resume()}else{syncBest();show("scrStart")}};
 function pause(){if(g&&g.run&&!g.paused){g.paused=true;musStop();show("scrPause")}}
 function resume(){if(g&&g.paused){g.paused=false;last=performance.now();show(null);g.count=Math.max(g.count,1.5);musStart()}}
