@@ -317,7 +317,7 @@ var SET_OPT={fire:["manual"],side:["left","right"],vib:["on","off"]}; /* tir aut
 var SET=(function(){var o={};try{o=JSON.parse(store("gpapi_set")||"{}")||{}}catch(e){}var r={};for(var k in SET_DEF){if(SET_OPT[k])r[k]=SET_OPT[k].indexOf(o[k])>=0?o[k]:SET_DEF[k];else r[k]=typeof o[k]==="number"?Math.max(0,Math.min(150,o[k])):SET_DEF[k]}return r})();
 var BUS=null;
 function sfxBus(){if(!AC)return null;if(!BUS){BUS=AC.createGain();BUS.connect(AC.destination)}BUS.gain.value=SET.sfx/100;return BUS}
-function musGain(){return .9*SET.music/100}
+function musGain(){return 1.35*SET.music/100}
 function saveSet(){store("gpapi_set",JSON.stringify(SET))}
 /* ---------- Son ---------- */
 var AC=null, muted=store("gpaj_mute")==="1";
@@ -389,12 +389,14 @@ $("bMute").onclick=toggleMute;$("hMute").onclick=toggleMute;syncMute();
 /* ---------- Musique synthwave générée en direct (aucun fichier) ---------- */
 var MUS={on:true,playing:false,step:0,next:0,timer:null,out:null,level:1,nb:null};
 function musLevel(){if(!g)return 1;if(g.bossOn)return 4;return g.wave>=4?3:g.wave>=2?2:1}
-function musBpm(){return 132+Math.min(g?g.wave:0,12)*1.1+(MUS.level===4?6:0)}
+function musBpm(){return 148+Math.min(g?g.wave:0,12)*1.2+(MUS.level===4?8:0)}
 var CHORDS=[[110,130.81,164.81],[87.31,110,130.81],[130.81,164.81,196],[98,123.47,146.83]]; /* La m, Fa, Do, Sol */
 var BOSSCH=[[110,130.81,164.81],[116.54,138.59,174.61],[103.83,123.47,155.56],[110,130.81,164.81]];
-function musNoise(){if(MUS.nb)return MUS.nb;var n=AC.sampleRate*.5,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=Math.random()*2-1;return MUS.nb=b}
+function musNoise(){if(MUS.nb)return MUS.nb;var n=AC.sampleRate*.5,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0),v=0,hold=Math.max(1,Math.round(AC.sampleRate/16000));for(var i=0;i<n;i++){if(i%hold===0)v=Math.random()<.5?-1:1;d[i]=v}return MUS.nb=b}
+var PWAVE={};
+function pulseWave(d){if(PWAVE[d])return PWAVE[d];var n=40,re=new Float32Array(n),im=new Float32Array(n);for(var k=1;k<n;k++){im[k]=2/(k*Math.PI)*Math.sin(k*Math.PI*d)}return PWAVE[d]=AC.createPeriodicWave(re,im)}
 function mNote(type,f,t,dur,vol,cut,glideTo,bus){
-  var o=AC.createOscillator(),gn=AC.createGain(),fl=AC.createBiquadFilter();o.type=type;o.frequency.setValueAtTime(f,t);if(glideTo)o.frequency.exponentialRampToValueAtTime(glideTo,t+dur);
+  var o=AC.createOscillator(),gn=AC.createGain(),fl=AC.createBiquadFilter();if(type==="pulse25"||type==="pulse12"){o.setPeriodicWave(pulseWave(type==="pulse25"?.25:.125))}else o.type=type;o.frequency.setValueAtTime(f,t);if(glideTo)o.frequency.exponentialRampToValueAtTime(glideTo,t+dur);
   fl.type="lowpass";fl.frequency.setValueAtTime(cut||2000,t);fl.Q.value=4;
   gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(vol,t+.005);gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(fl);fl.connect(gn);gn.connect(bus||MUS.out);o.start(t);o.stop(t+dur+.05);
@@ -404,36 +406,34 @@ function mNoise(t,dur,vol,type,freq){
   gn.gain.setValueAtTime(vol,t);gn.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(gn);gn.connect(MUS.out);s.start(t);s.stop(t+dur+.02);
 }
 function mKick(t){mNote("sine",160,t,.22,.9,800,42)}
-/* Mélodie accrocheuse (La mineur, croches) : 4 mesures La m – Fa – Do – Sol, en demi-tons depuis La 4 */
-var HOOK=[[0,3,7,12,10,7,3,7],[-4,0,5,8,7,5,0,5],[3,7,10,15,12,10,7,10],[-2,2,7,10,14,12,10,7]];
-var HOOK_B=[[12,null,10,12,15,null,12,10],[8,null,7,8,12,null,8,7],[15,null,14,15,19,null,15,14],[14,12,10,7,10,12,14,null]];
-function semi(n){return 440*Math.pow(2,n/12)}
-function mDuck(t){if(!MUS.bassBus)return;var gg=MUS.bassBus.gain;gg.cancelScheduledValues(t);gg.setValueAtTime(.25,t);gg.linearRampToValueAtTime(1,t+.16)}
+/* ---- Rock 8 bits (Mi mineur) : Mi m – Do – Ré – Si, guitare rythmique en carrés, basse triangle, batterie en bruit ---- */
+var E2=82.41;function nE(n){return E2*Math.pow(2,n/12)}            /* n = demi-tons au-dessus de Mi 2 */
+var ROOTS=[0,-4,-2,-5],BOSSR=[0,1,0,-1];                           /* Mi, Do, Ré, Si  |  boss : Mi, Fa, Mi, Ré# */
+var RIFF=[[19,19,22,24,22,19,17,19],[15,15,19,20,19,15,12,15],[17,17,21,22,21,17,14,17],[19,23,26,23,19,18,19,23]];
+var BRIFF=[[24,25,24,22,24,25,27,25],[25,24,25,27,29,27,25,24],[24,22,24,25,24,22,19,22],[23,22,23,25,27,25,23,22]];
+function mDuck(t){}
 function musStep(st,t,s16){
-  var lv=MUS.level,beat=st%16,barN=Math.floor(st/16),bar=barN%4,ch=(lv===4?BOSSCH:CHORDS)[bar],root=ch[0],fill=(barN%8===7);
-  /* batterie : grosse caisse 4 temps (sauf breaks), claps 2 et 4, charleston ouvert sur les contretemps */
-  if(beat%4===0&&!(fill&&beat>=12)){mKick(t);mDuck(t)}
-  if(beat===4||beat===12){mNoise(t,.14,.32,"bandpass",1800);mNoise(t+.01,.1,.18,"bandpass",2900)}
-  if(beat%4===2)mNoise(t,.11,.14,"highpass",6500);
-  else if(lv>=2&&beat%2===1)mNoise(t,.02,.06,"highpass",9500);
-  if(fill&&beat>=8){mNoise(t,.07,.12+beat*.012,"bandpass",1400+beat*120)}
-  /* basse qui pompe (coupée sous la grosse caisse) */
-  var bf=root/2;
-  if(lv>=3){mNote("sawtooth",beat%2?bf*2:bf,t,s16*.85,.15,1100,null,MUS.bassBus)}
-  else if(beat%4!==0){mNote("sawtooth",beat%4===3?bf*2:bf,t,s16*.9,.17,800,null,MUS.bassBus)}
-  /* nappe */
-  if(beat===0)ch.forEach(function(f,i){mNote("sawtooth",f*2*(1+(i-1)*.004),t,s16*15,.022,1600)});
-  /* le refrain : la mélodie principale, avec écho */
-  if(beat%2===0){var n=HOOK[bar][beat/2];
-    if(lv===4)n=[0,1,7,12,13,12,7,1][beat/2]+(bar%2?-1:0);
-    var vol=lv>=2?.055:.04;mNote("square",semi(n),t,s16*1.6,vol,lv>=3?4200:3000,null,MUS.lead);
-    if(lv>=3)mNote("sawtooth",semi(n+12)*1.003,t,s16*1.2,.018,5000,null,MUS.lead)}
-  /* contre-chant aigu en vague 4+ */
-  if(lv>=3&&lv<4&&beat%2===1){var m=HOOK_B[bar][(beat-1)/2];if(m!==null)mNote("triangle",semi(m+12),t,s16*.9,.03,6000)}
-  /* arpège rapide (vague 2+) */
-  if(lv>=2){var seq=[ch[0]*4,ch[1]*4,ch[2]*4,ch[1]*4],f=seq[beat%4]*(beat>=8&&lv>=3?2:1);mNote("square",f,t,s16*.55,.018,2600)}
-  /* montée avant la reprise */
-  if(fill&&beat===12)mNote("sawtooth",root,t,s16*4,.06,4000,root*4);
+  var lv=MUS.level,beat=st%16,barN=Math.floor(st/16),bar=barN%4,boss=lv===4,root=(boss?BOSSR:ROOTS)[bar],fill=(barN%8===7&&beat>=12);
+  /* batterie 8 bits */
+  var kick=(beat===0||beat===8||beat===10||(lv>=3&&beat===6))&&!fill;
+  if(kick){mNote("square",150,t,.09,.32,3000,40);mNoise(t,.03,.18,"lowpass",900)}
+  if((beat===4||beat===12)&&!fill){mNoise(t,.12,.34,"bandpass",2200);mNote("triangle",220,t,.06,.12,4000,120)}
+  if(fill){mNoise(t,.06,.2+(beat-12)*.05,"bandpass",1500+(beat-12)*500);if(beat%2===0)mNote("square",300-(beat-12)*40,t,.07,.12,3000,80)}
+  if(beat%2===0)mNoise(t,.025,lv>=2?.09:.06,"highpass",8000);else if(lv>=3)mNoise(t,.015,.05,"highpass",9500);
+  if(beat===0&&barN%4===0&&lv>=2)mNoise(t,.5,.12,"highpass",6000);
+  /* basse triangle : croches qui galopent */
+  if(beat%2===0){var bo=(beat===6||beat===14)?12:0;mNote("triangle",nE(root+bo),t,s16*1.7,.26,6000)}
+  else if(lv>=3)mNote("triangle",nE(root),t,s16*.8,.18,6000);
+  /* guitare rythmique : accords de quinte étouffés (« chug ») */
+  var pm=beat%4===0?s16*1.8:s16*.6;
+  mNote("pulse25",nE(root+12),t,pm,.05,3500,null,MUS.bassBus);mNote("pulse25",nE(root+19),t,pm,.035,3500,null,MUS.bassBus);
+  /* solo : le riff principal (vague 2+, ou dès la vague 1 en plus doux) */
+  if(beat%2===0){var n=(boss?BRIFF:RIFF)[bar][beat/2],v=lv>=2?.07:.045;
+    if(!(lv<2&&barN%2===1)){mNote("square",nE(n+12),t,s16*1.5,v,6000,null,MUS.lead);if(lv>=3)mNote("pulse12",nE(n+15+(bar===3?1:0)),t,s16*1.3,.03,6000,null,MUS.lead)}}
+  /* arpège « tremolo » ultra rapide en boss et vague 6+ */
+  if(lv>=3&&(boss||barN%2===1)){var ar=[0,7,12,19][beat%4];mNote("pulse12",nE(root+24+ar),t,s16*.5,.022,7000)}
+  /* glissando de guitare avant la reprise */
+  if(fill&&beat===12)mNote("square",nE(root+12),t,s16*4,.06,6000,nE(root+36));
 }
 function musTick(){
   if(!MUS.playing||!AC)return;
