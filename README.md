@@ -11,7 +11,7 @@ Jeux des QR codes de table de GoPlay Arena (goplayarena.re/jeu).
 | Jeu | Fichier | Adresse |
 |---|---|---|
 | Arena Defender | game.html | /jeu/ |
-| Arena Pilot | pilot.html | /jeu/pilot/ |
+| Pilot Arena | pilot.html | /jeu/pilot/ |
 | Pixel Rush | pixel.html | /jeu/pixel/ |
 | Laser Reflex | laser.html | /jeu/laser/ |
 | Target Chain | chain.html | /jeu/chain/ |
