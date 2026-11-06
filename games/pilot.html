@@ -74,6 +74,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 #hHint{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 70px);text-align:center;color:var(--muted);font-size:14px;letter-spacing:.06em;pointer-events:none}
 .legend i.ball{border:0;border-radius:50%;background:#FF7A3D;transform:none;box-shadow:0 0 8px #FF7A3D}
 .tiltnote{font-size:14px;color:var(--muted);margin:-6px 0 0}
+.sets{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left}
+.set{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;font-size:17px;font-weight:600}
+.set b{font-family:var(--display);color:var(--cyan);font-variant-numeric:tabular-nums}
+.set input{grid-column:1/-1;width:100%;accent-color:var(--cyan);height:28px}
 </style>
 
 <canvas id="c" aria-label="Espace de vol"></canvas>
@@ -81,7 +85,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 <div class="hud" id="hud" hidden>
   <div><small>Score</small><div class="sc" id="hScore">0</div><div id="combo"></div></div>
   <div class="wv"><small>Vague</small><span id="hWave">1</span></div>
-  <div class="rt"><button class="btn-ico" id="hMute" aria-label="Couper le son">♪</button><div class="lives" id="hLives"><i></i><i></i><i></i></div></div>
+  <div class="rt"><div style="display:flex;gap:6px"><button class="btn-ico" id="hSet" aria-label="Réglages">⚙</button><button class="btn-ico" id="hMute" aria-label="Couper le son">♪</button></div><div class="lives" id="hLives"><i></i><i></i><i></i></div></div>
 </div>
 
 <section class="ov" id="scrStart">
@@ -103,7 +107,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
       <button class="ghost" id="bBoard">Classement</button>
       <button class="ghost" id="bMute">Son : oui</button>
     </div>
-    <button class="ghost" id="bMusic">Musique : oui</button>
+    <button class="ghost" id="bSet">⚙ Réglages</button>
     <div class="site">goplayarena.re</div>
   </div>
 </section>
@@ -130,6 +134,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <p class="err" id="oErr"></p>
     <div class="board" id="boardB"></div>
     <button class="play" id="bAgain">REJOUER</button>
+  </div>
+</section>
+
+<section class="ov" id="scrSet" hidden>
+  <div class="box">
+    <div class="eyebrow">Réglages</div>
+    <div class="sets">
+      <label class="set" for="r_move"><span>Vitesse du vaisseau</span><b id="v_move"></b><input type="range" id="r_move" min="20" max="150" step="5"></label>
+      <label class="set" for="r_turn"><span>Vitesse de rotation</span><b id="v_turn"></b><input type="range" id="r_turn" min="10" max="150" step="5"></label>
+      <label class="set" for="r_music"><span>Volume de la musique</span><b id="v_music"></b><input type="range" id="r_music" min="0" max="100" step="5"></label>
+      <label class="set" for="r_sfx"><span>Volume des effets</span><b id="v_sfx"></b><input type="range" id="r_sfx" min="0" max="100" step="5"></label>
+    </div>
+    <p class="how" style="font-size:15px">Plus le chiffre est bas, plus le vaisseau est doux et précis. Tes réglages restent enregistrés sur ce téléphone.</p>
+    <button class="play" id="bSetBack">OK</button>
+    <button class="ghost" id="bSetReset">Valeurs par défaut</button>
   </div>
 </section>
 
@@ -182,13 +201,20 @@ function renderBoard(el){
 }
 function fmt(n){return Math.round(n).toLocaleString("fr-FR")}
 
+/* ---------- Réglages (mémorisés sur le téléphone) ---------- */
+var SET_DEF={move:60,turn:60,music:60,sfx:80};
+var SET=(function(){var o={};try{o=JSON.parse(store("gpapi_set")||"{}")||{}}catch(e){}var r={};for(var k in SET_DEF)r[k]=typeof o[k]==="number"?Math.max(0,Math.min(150,o[k])):SET_DEF[k];return r})();
+var BUS=null;
+function sfxBus(){if(!AC)return null;if(!BUS){BUS=AC.createGain();BUS.connect(AC.destination)}BUS.gain.value=SET.sfx/100;return BUS}
+function musGain(){return .9*SET.music/100}
+function saveSet(){store("gpapi_set",JSON.stringify(SET))}
 /* ---------- Son ---------- */
 var AC=null, muted=store("gpaj_mute")==="1";
 function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}}if(AC&&AC.state==="suspended")AC.resume()}
 function tone(f1,f2,dur,type,vol,delay){
   if(muted||!AC)return;var t=AC.currentTime+(delay||0),o=AC.createOscillator(),g=AC.createGain();
   o.type=type||"square";o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f2),t+dur);
-  g.gain.setValueAtTime(vol||.08,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+.02);
+  g.gain.setValueAtTime(vol||.08,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(sfxBus());o.start(t);o.stop(t+dur+.02);
 }
 function noise(dur,vol){
   if(muted||!AC)return;var n=AC.sampleRate*dur,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);
@@ -214,7 +240,7 @@ var SFX={
 };
 function noise(dur,vol){
   if(muted||!AC)return;var n=AC.sampleRate*dur,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);
-  for(var i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);var s=AC.createBufferSource(),gn=AC.createGain();gn.gain.value=vol||.25;s.buffer=b;s.connect(gn);gn.connect(AC.destination);s.start();
+  for(var i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);var s=AC.createBufferSource(),gn=AC.createGain();gn.gain.value=vol||.25;s.buffer=b;s.connect(gn);gn.connect(sfxBus());s.start();
 }
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 function syncMute(){$("bMute").textContent="Son : "+(muted?"non":"oui");$("hMute").style.opacity=muted?.4:1;$("hMute").setAttribute("aria-label",muted?"Activer le son":"Couper le son")}
@@ -223,7 +249,7 @@ $("bMute").onclick=toggleMute;$("hMute").onclick=toggleMute;syncMute();
 
 
 /* ---------- Musique synthwave générée en direct (aucun fichier) ---------- */
-var MUS={on:store("gpapi_music")!=="0",playing:false,step:0,next:0,timer:null,out:null,level:1,nb:null};
+var MUS={on:true,playing:false,step:0,next:0,timer:null,out:null,level:1,nb:null};
 function musLevel(){if(!g)return 1;if(g.bossOn)return 4;return g.wave>=4?3:g.wave>=2?2:1}
 function musBpm(){return 124+Math.min(g?g.wave:0,12)*1.2+(MUS.level===4?6:0)}
 var CHORDS=[[110,130.81,164.81],[87.31,110,130.81],[130.81,164.81,196],[98,123.47,146.83]]; /* La m, Fa, Do, Sol */
@@ -262,9 +288,9 @@ function musTick(){
   while(MUS.next<AC.currentTime+.15){musStep(MUS.step,MUS.next,s16);MUS.next+=s16;MUS.step++}
 }
 function musStart(){
-  if(!AC||!MUS.on||muted||MUS.playing)return;
+  if(!AC||SET.music<=0||muted||MUS.playing)return;
   var comp=AC.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(AC.destination);
-  MUS.out=AC.createGain();MUS.out.gain.setValueAtTime(0,AC.currentTime);MUS.out.gain.linearRampToValueAtTime(.55,AC.currentTime+.8);MUS.out.connect(comp);
+  MUS.out=AC.createGain();MUS.out.gain.setValueAtTime(0,AC.currentTime);MUS.out.gain.linearRampToValueAtTime(musGain(),AC.currentTime+.8);MUS.out.connect(comp);
   MUS.comp=comp;MUS.next=AC.currentTime+.08;MUS.step=0;MUS.playing=true;MUS.timer=setInterval(musTick,25);musTick();
 }
 function musStop(){
@@ -272,9 +298,6 @@ function musStop(){
   var o=MUS.out,c=MUS.comp;try{o.gain.cancelScheduledValues(AC.currentTime);o.gain.setValueAtTime(o.gain.value,AC.currentTime);o.gain.linearRampToValueAtTime(0,AC.currentTime+.4)}catch(e){}
   setTimeout(function(){try{o.disconnect();c.disconnect()}catch(e){}},600);
 }
-function syncMusic(){var b=$("bMusic");if(b)b.textContent="Musique : "+(MUS.on?"oui":"non")}
-$("bMusic").onclick=function(){MUS.on=!MUS.on;store("gpapi_music",MUS.on?"1":"0");syncMusic();audio();if(!MUS.on)musStop()};
-syncMusic();
 
 /* ---------- Commandes : joystick rond, transparent, en bas au milieu ---------- */
 var joy={on:false,id:null,dx:0,dy:0,x:0,y:0,r:52};
@@ -373,7 +396,7 @@ function autoFire(dt){
   var range=Math.max(W,H);
   /* le nez du vaisseau suit la direction où l'on penche (ou glisse le doigt) */
   var sp0=Math.hypot(g.vx,g.vy);
-  if(sp0>35*S){var want=Math.atan2(g.vy,g.vx),d0=angDiff(want,g.heading),turn=11*dt;g.heading+=Math.max(-turn,Math.min(turn,d0))}
+  if(sp0>25*S){var want=Math.atan2(g.vy,g.vx),d0=angDiff(want,g.heading),turn=(1.5+10*SET.turn/100)*dt;g.heading+=Math.max(-turn,Math.min(turn,d0))}
   g.fireT-=dt;
   if(g.fireT<=0){
     /* tire seulement si un ennemi est dans le cône avant */
@@ -442,14 +465,14 @@ function track(o,hr){
   return false;
 }
 function control(dt){
-  var maxV=340*S,tx=0,ty=0;
+  var maxV=380*S*SET.move/100,tx=0,ty=0;
   if(keys.ArrowLeft||keys.ArrowRight||keys.ArrowUp||keys.ArrowDown){
     tx=((keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0))*maxV;ty=((keys.ArrowDown?1:0)-(keys.ArrowUp?1:0))*maxV;
   }else{
     var l=Math.hypot(joy.dx,joy.dy),dz=.12;
-    if(l>dz){var k=(l-dz)/(1-dz)/l;tx=joy.dx*k*maxV;ty=joy.dy*k*maxV}
+    if(l>dz){var n=Math.pow((l-dz)/(1-dz),1.6),k=n/l;tx=joy.dx*k*maxV;ty=joy.dy*k*maxV}
   }
-  g.vx+=(tx-g.vx)*Math.min(1,dt*10);g.vy+=(ty-g.vy)*Math.min(1,dt*10);
+  g.vx+=(tx-g.vx)*Math.min(1,dt*7);g.vy+=(ty-g.vy)*Math.min(1,dt*7);
   g.px+=g.vx*dt;g.py+=g.vy*dt;
   var m=16*S;g.px=Math.max(m,Math.min(W-m,g.px));g.py=Math.max(TOP+m,Math.min(H-m-8,g.py));
   if(g.px<=m||g.px>=W-m)g.vx=0;
@@ -638,7 +661,7 @@ function joyUp(e){if(e.pointerId===joy.id){joy.on=false;joy.id=null;joy.dx=joy.d
 cv.addEventListener("pointerup",joyUp);cv.addEventListener("pointercancel",joyUp);
 
 /* ---------- Écrans ---------- */
-function show(id){["scrStart","scrBoard","scrOver","scrPause"].forEach(function(s){$(s).hidden=s!==id});$("hud").hidden=id!==null}
+function show(id){["scrStart","scrBoard","scrOver","scrPause","scrSet"].forEach(function(s){$(s).hidden=s!==id});$("hud").hidden=id!==null}
 function best(){return parseInt(store("gpapi_best")||"0",10)||0}
 function syncBest(){var b=best();$("sBest").innerHTML=b?"Ton record : <b>"+fmt(b)+"</b>":"Le classement t'attend"}
 function start(){
@@ -676,6 +699,22 @@ $("bPlay").onclick=function(){start()};$("bAgain").onclick=function(){start()};$
 $("bBoard").onclick=function(){boardPeriod="day";renderBoard($("boardA"));show("scrBoard")};
 $("bBoardBack").onclick=function(){syncBest();show("scrStart")};
 
+
+/* ---------- Menu Réglages ---------- */
+var setFrom="start";
+function fillSet(){["move","turn","music","sfx"].forEach(function(k){$("r_"+k).value=SET[k];$("v_"+k).textContent=SET[k]+" %"})}
+["move","turn","music","sfx"].forEach(function(k){
+  $("r_"+k).addEventListener("input",function(){
+    SET[k]=Math.round(+this.value);$("v_"+k).textContent=SET[k]+" %";saveSet();audio();
+    if(k==="sfx"){sfxBus();clearTimeout(fillSet.t);fillSet.t=setTimeout(function(){SFX.pick()},120)}
+    if(k==="music"&&MUS.out){try{MUS.out.gain.setTargetAtTime(musGain(),AC.currentTime,.05)}catch(e){}if(SET.music<=0)musStop()}
+  });
+});
+function openSet(from){setFrom=from;fillSet();if(from==="game"&&g&&g.run&&!g.paused){g.paused=true;musStop()}show("scrSet")}
+$("bSet").onclick=function(){audio();openSet("start")};
+$("hSet").onclick=function(){audio();openSet("game")};
+$("bSetReset").onclick=function(){for(var k in SET_DEF)SET[k]=SET_DEF[k];saveSet();fillSet();sfxBus();if(MUS.out){try{MUS.out.gain.setTargetAtTime(musGain(),AC.currentTime,.05)}catch(e){}}};
+$("bSetBack").onclick=function(){if(setFrom==="game"&&g&&g.run){resume()}else{syncBest();show("scrStart")}};
 function pause(){if(g&&g.run&&!g.paused){g.paused=true;musStop();show("scrPause")}}
 function resume(){if(g&&g.paused){g.paused=false;last=performance.now();show(null);g.count=Math.max(g.count,1.5);musStart()}}
 $("bResume").onclick=function(){audio();resume()};
