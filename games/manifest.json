@@ -1,5 +1,5 @@
 {
- "version": "2026.11.06-185032",
+ "version": "2026.11.06-185234",
  "files": {
   "chain.html": "8aa2a530e4f401da94b20e5d637081296f83dad37d55fc7392159e5007be2bc0",
   "color.html": "02d09dd3e37cf862307f5b401ba1b0fa293d1dd3d9945fbefa3ebe0fbf155d88",
@@ -9,5 +9,9 @@
   "pilot.html": "f58fb57e1336f0377a1220e2b157f67e2fc31790e209a7ab1355afb30bfe4064",
   "pixel.html": "17585b638b17bde59057add845da168cbc8a2212616345cacf36fd7f85c62d92"
  },
- "games": {}
+ "games": {},
+ "plugin": {
+  "version": "1.4.0",
+  "sha": "682cd1c04049aa6f7b40afb2ae92eee19704be2378e7266893d637f39c7c8d84"
+ }
 }
