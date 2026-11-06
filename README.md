@@ -17,3 +17,6 @@ Jeux des QR codes de table de GoPlay Arena (goplayarena.re/jeu).
 | Target Chain | chain.html | /jeu/chain/ |
 | Memory Grid | memory.html | /jeu/memory/ |
 | Color Switch | color.html | /jeu/color/ |
+
+## Installation de secours
+`dist/goplay-arena-jeu-1.4.0.zip` : paquet complet de l'extension, à téléverser dans Extensions › Ajouter › Téléverser si elle devait être réinstallée.
