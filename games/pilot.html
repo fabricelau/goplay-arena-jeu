@@ -140,6 +140,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <p class="err" id="oErr"></p>
     <div class="board" id="boardB"></div>
     <button class="play" id="bAgain">REJOUER</button>
+    <button class="ghost" id="bOverMenu">Retour au menu</button>
   </div>
 </section>
 
@@ -786,6 +787,7 @@ $("hQuit").onclick=function(){if(g&&g.run){if(!g.paused){g.paused=true;musStop()
 $("bQuitNo").onclick=function(){audio();resume()};
 $("bQuitYes").onclick=function(){if(g){g.run=false;g.paused=false}musStop();joy.on=false;joy.dx=joy.dy=0;fb.on=false;g=null;$("combo").textContent="";syncBest();show("scrStart")};
 document.addEventListener("visibilitychange",function(){if(document.hidden)pause()});
+$("bOverMenu").onclick=function(){syncBest();show("scrStart")};
 syncBest();show("scrStart");
 })();
 </script>

@@ -119,6 +119,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <p class="err" id="oErr"></p>
     <div class="board" id="boardB"></div>
     <button class="play" id="bAgain">REJOUER</button>
+    <button class="ghost" id="bOverMenu">Retour au menu</button>
   </div>
 </section>
 
@@ -437,6 +438,7 @@ function pause(){if(g&&g.run&&!g.paused){g.paused=true;show("scrPause")}}
 function resume(){if(g&&g.paused){g.paused=false;last=performance.now();show(null)}}
 $("bResume").onclick=function(){audio();resume()};
 document.addEventListener("visibilitychange",function(){if(document.hidden)pause()});
+$("bOverMenu").onclick=function(){syncBest();show("scrStart")};
 syncBest();show("scrStart");
 })();
 </script>
