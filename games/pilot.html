@@ -96,6 +96,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .ship.on{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}.ship.locked{cursor:default;opacity:.75}
 .by{margin-top:-8px;font:600 15px var(--body);letter-spacing:.32em;text-transform:uppercase;color:var(--muted)}
 .by b{color:var(--text);font-weight:700;text-shadow:0 0 12px rgba(61,240,255,.6)}
+.split{width:min(420px,100%)}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.row2 .play{font-size:20px;padding:14px 0}
 .rank{font:700 17px var(--display);color:var(--bomb);min-height:22px}
 .sets{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left}
 .set{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;font-size:17px;font-weight:600}
@@ -104,6 +107,46 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .seg{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .seg button{font:700 15px var(--body);letter-spacing:.04em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:10px;padding:10px 0;cursor:pointer}
 .seg button[aria-pressed="true"]{color:#06182E;background:var(--cyan);border-color:var(--cyan)}
+/* paysage : menus sur deux colonnes, tout tient dans l'écran */
+@media (orientation:landscape) and (max-height:560px){
+  .ov{padding-block:calc(env(safe-area-inset-top,0px) + 10px) calc(env(safe-area-inset-bottom,0px) + 10px)}
+  .box{gap:10px;width:min(760px,100%)}
+  .box.split{flex-direction:row;align-items:center;gap:28px;width:min(900px,100%)}
+  .split .col{flex:1;gap:9px}
+  h1{font-size:clamp(34px,11vh,52px)}
+  .by{margin-top:-4px;font-size:13px}
+  .how{font-size:14px;line-height:1.3}
+  .legend{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;font-size:13px}
+  .legend div{padding:5px 7px}
+  .play{padding:11px 0;font-size:20px}
+  .ghost{padding:9px 0;font-size:15px}
+  .row2{gap:8px}
+  .eyebrow{font-size:12px}
+  .site{display:none}
+  .big{font-size:clamp(40px,14vh,58px)}
+  .recap{gap:4px}.recap div{padding:5px 8px;font-size:13px}
+  .rank{font-size:15px;min-height:0}
+  .namef input{padding:8px 12px;font-size:17px}
+  .err{min-height:0;margin:0}
+  .board{padding:8px}.board li{padding:3px 6px;font-size:15px}
+  .board li:nth-child(n+6):not(.me){display:none}
+  .tabs{margin-bottom:4px}.tabs button{padding:5px 0}
+  .sets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;padding:10px 14px}
+  .set{font-size:15px}.set input{height:22px}.seg button{padding:6px 0;font-size:14px}
+  .note{display:none}
+  .cards{flex-direction:row}.card{flex:1;padding:12px}
+  .card strong{font-size:17px}.card span{font-size:14px}
+  .ships{grid-template-columns:repeat(5,minmax(0,1fr))}.ship canvas{width:56px;height:56px}.ship span{font-size:11px}
+  .pause{font-size:24px}
+}
+@media (orientation:landscape) and (max-height:400px){
+  .box.split{gap:20px}.split .col{gap:7px}
+  .how{font-size:13px;line-height:1.25}
+  .legend{font-size:12px;gap:4px}.legend div{padding:4px 6px}
+  .streak,.best{font-size:13px}
+  .sets{gap:4px 16px;padding:8px 12px}.set{font-size:14px;gap:2px 8px}.set input{height:18px}.seg button{padding:5px 0}
+  .box{gap:8px}.play{padding:9px 0}.ghost{padding:8px 0}
+}
 </style>
 
 <canvas id="c" aria-label="Espace de vol"></canvas>
@@ -115,7 +158,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 </div>
 
 <section class="ov" id="scrStart">
-  <div class="box">
+  <div class="box split">
+    <div class="col colA">
     <div class="eyebrow">GoPlay Arena</div>
     <h1>Pilot<br><span>Arena</span></h1>
     <div class="by">by <b>GoPlay Arena</b></div>
@@ -128,6 +172,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
       <div><i style="border-color:#5CFFB0"></i>B · Bulle</div>
       <div><i style="border-color:#FFFFFF"></i>N · Nova</div>
     </div>
+    </div>
+    <div class="col colB">
     <div class="best" id="sBest"></div>
     <div class="streak" id="sStreak"></div>
     <button class="play" id="bPlay">JOUER</button>
@@ -137,6 +183,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     </div>
     <div class="row2"><button class="ghost" id="bShip">Vaisseau : Classique</button><button class="ghost" id="bSet">⚙ Réglages</button></div>
     <div class="site">goplayarena.re</div>
+    </div>
   </div>
 </section>
 
@@ -144,19 +191,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
   <div class="box">
     <div class="eyebrow">Classement Pilot Arena</div>
     <div class="board" id="boardA"></div>
-    <button class="play" id="bBoardPlay">JOUER</button>
-    <button class="ghost" id="bBoardBack">Retour</button>
+    <div class="row2"><button class="play" id="bBoardPlay">JOUER</button><button class="ghost" id="bBoardBack">Retour</button></div>
   </div>
 </section>
 
 <section class="ov" id="scrOver" hidden>
-  <div class="box">
+  <div class="box split">
+    <div class="col colA">
     <div class="eyebrow">Vaisseau détruit</div>
     <div class="big" id="oScore">0</div>
     <div class="meta" id="oMeta"></div>
     <div class="recap" id="oRecap"></div>
     <div class="unlock" id="oUnlock" hidden></div>
     <div class="rank" id="oRank"></div>
+    </div>
+    <div class="col colB">
     <div class="rec" id="oRec" hidden>NOUVEAU RECORD</div>
     <form class="namef" id="fName" autocomplete="off">
       <input id="iName" maxlength="14" placeholder="Ton nom" aria-label="Ton nom pour le classement" enterkeyhint="done">
@@ -164,8 +213,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     </form>
     <p class="err" id="oErr"></p>
     <div class="board" id="boardB"></div>
-    <button class="play" id="bAgain">REJOUER</button>
-    <button class="ghost" id="bOverMenu">Retour au menu</button>
+    <div class="row2"><button class="play" id="bAgain">REJOUER</button><button class="ghost" id="bOverMenu">Retour au menu</button></div>
+    </div>
   </div>
 </section>
 
@@ -181,9 +230,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
       <label class="set" for="r_music"><span>Volume de la musique</span><b id="v_music"></b><input type="range" id="r_music" min="0" max="100" step="5"></label>
       <label class="set" for="r_sfx"><span>Volume des effets</span><b id="v_sfx"></b><input type="range" id="r_sfx" min="0" max="100" step="5"></label>
     </div>
-    <p class="how" style="font-size:15px">Plus le chiffre est bas, plus le vaisseau est doux et précis. Tes réglages restent enregistrés sur ce téléphone.</p>
-    <button class="play" id="bSetBack">OK</button>
-    <button class="ghost" id="bSetReset">Valeurs par défaut</button>
+    <p class="how note" style="font-size:15px">Plus le chiffre est bas, plus le vaisseau est doux et précis. Tes réglages restent enregistrés sur ce téléphone.</p>
+    <div class="row2"><button class="play" id="bSetBack">OK</button><button class="ghost" id="bSetReset">Valeurs par défaut</button></div>
   </div>
 </section>
 
@@ -199,7 +247,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
   <div class="box">
     <div class="eyebrow">Hangar</div>
     <div class="ships" id="shipList"></div>
-    <p class="how" style="font-size:15px">Débloque de nouveaux vaisseaux en jouant. Ils restent sur ce téléphone.</p>
+    <p class="how note" style="font-size:15px">Débloque de nouveaux vaisseaux en jouant. Ils restent sur ce téléphone.</p>
     <button class="play" id="bShipBack">OK</button>
   </div>
 </section>
