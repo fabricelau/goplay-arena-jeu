@@ -99,6 +99,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .split{width:min(420px,100%)}
 .col{display:flex;flex-direction:column;gap:16px;min-width:0}
 .row2 .play{font-size:20px;padding:14px 0}
+.fstip{display:flex;gap:8px;align-items:flex-start;text-align:left;background:rgba(61,240,255,.1);border:1px solid rgba(61,240,255,.35);border-radius:12px;padding:8px 10px;font-size:14px;line-height:1.3;color:var(--text)}
+.fstip b{color:var(--cyan)}.fstip svg{vertical-align:-2px;color:var(--cyan)}
+.fstip button{flex:none;background:none;border:0;color:var(--muted);font-size:15px;cursor:pointer;padding:0 2px}
 .rank{font:700 17px var(--display);color:var(--bomb);min-height:22px}
 .sets{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left}
 .set{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;font-size:17px;font-weight:600}
@@ -175,6 +178,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     </div>
     </div>
     <div class="col colB">
+    <div class="fstip" id="fsTip" hidden><span><b>Plein écran sur iPhone :</b> touche Partager <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8" fill="none" stroke="currentColor" stroke-width="2"/></svg> puis « Sur l'écran d'accueil ». GoSpace s'ouvrira sans la barre de Safari.</span><button type="button" id="fsTipX" aria-label="Masquer l'astuce">✕</button></div>
     <div class="best" id="sBest"></div>
     <div class="streak" id="sStreak"></div>
     <button class="play" id="bPlay">JOUER</button>
@@ -1092,7 +1096,7 @@ function loop(now){
   draw(dt);requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
-cv.addEventListener("pointerdown",function(e){e.preventDefault();if(g&&g.paused){resume();return}
+cv.addEventListener("pointerdown",function(e){e.preventDefault();if(isLand())goFull();if(g&&g.paused){resume();return}
   if(Math.hypot(e.clientX-sb.x,e.clientY-sb.y)<sb.r*1.35){triggerSuper();return}
   /* le joystick s'attrape dans une large zone autour du cercle */
   /* le doigt va au bouton FEU ou au joystick selon celui dont il est le plus près (zones larges, le doigt peut déborder) */
@@ -1150,12 +1154,22 @@ function robo(k){
   var p=ROBO[k];if(!p)return;p.then(function(buf){if(!buf)return;try{var s=AC.createBufferSource(),gn=AC.createGain();s.buffer=buf;gn.gain.value=1.35;s.connect(gn);gn.connect(sfxBus());s.start()}catch(e){}});
 }
 var COUNT_KEYS={3:"three",2:"two",1:"one"};
+/* ---------- Plein écran ----------
+   Android et la plupart des navigateurs : vrai plein écran au toucher (JOUER, ou premier toucher en paysage).
+   iPhone : Safari ne le permet pas pour une page ; on propose « Sur l'écran d'accueil », qui ouvre le jeu sans barre. */
+var IOS=/iPhone|iPod/.test(navigator.userAgent),STANDALONE=!!(navigator.standalone||(window.matchMedia&&(matchMedia("(display-mode: fullscreen)").matches||matchMedia("(display-mode: standalone)").matches)));
+function isFull(){return !!(document.fullscreenElement||document.webkitFullscreenElement)}
+function goFull(){
+  if(STANDALONE||isFull())return;var d=document.documentElement,f=d.requestFullscreen||d.webkitRequestFullscreen;if(!f)return;
+  try{var r=f.call(d,{navigationUI:"hide"});if(r&&r.catch)r.catch(function(){})}catch(e){}
+}
+function syncFsTip(){var t=$("fsTip");if(!t)return;var off=false;try{off=store("gpapi_fstip")==="0"}catch(e){}t.hidden=!(IOS&&!STANDALONE)||off}
 /* ---------- Écrans ---------- */
 function show(id){["scrStart","scrBoard","scrOver","scrPause","scrSet","scrQuit","scrUp","scrShip"].forEach(function(s){$(s).hidden=s!==id});$("hud").hidden=id!==null}
 function best(){return parseInt(store("gpapi_best")||"0",10)||0}
 function syncBest(){var b=best();$("sBest").innerHTML=b?"Ton record : <b>"+fmt(b)+"</b>":"Le classement t'attend"}
 function start(){
-  audio();myId=null;
+  audio();myId=null;goFull();
   var go=function(){var n=bumpStreak();newGame();g.skin=curShip();g.count=3;g.voice=true;robo("three");g.cPop=.25;$("combo").textContent="";show(null);musStart();
     if(n>=2){g.pw.bubble=true;if(n>=4)g.sup=n>=7?1:.5;g.banner={txt:"SÉRIE "+n+" JOURS",sub:streakBonus(n),t:2.4}}};
   go();
@@ -1245,6 +1259,8 @@ $("bShip").onclick=function(){audio();renderHangar();show("scrShip")};
 $("bShipBack").onclick=function(){syncShipBtn();show("scrStart")};
 /* son de clic sur tous les boutons des menus */
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("button");if(!b||b.closest("canvas"))return;audio();roboLoad();SFX.click()},true);
-syncStreak();syncShipBtn();syncBest();show("scrStart");
+$("fsTipX").onclick=function(e){e.stopPropagation();store("gpapi_fstip","0");syncFsTip()};
+document.addEventListener("fullscreenchange",function(){setTimeout(resize,120)});document.addEventListener("webkitfullscreenchange",function(){setTimeout(resize,120)});
+syncFsTip();syncStreak();syncShipBtn();syncBest();show("scrStart");
 })();
 </script>
