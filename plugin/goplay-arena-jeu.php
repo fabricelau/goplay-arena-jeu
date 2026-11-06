@@ -2,12 +2,12 @@
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
  * Description: Mini-jeux pour les tables (QR code) : Arena Defender, Pilot Arena, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.4.1
+ * Version: 1.4.2
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.4.1' );
+define( 'GPAJ_VER', '1.4.2' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
@@ -97,7 +97,7 @@ function gpaj_post( WP_REST_Request $req ) {
 	if ( gpaj_bad_name( $name ) ) { return new WP_Error( 'gpaj_name', 'Choisis un autre nom.', array( 'status' => 400 ) ); }
 	switch ( $game ) {
 		case 'arena':  $ok = $score <= $dur * 650 + $wave * $wave * 60 + 1000 && $wave <= intdiv( $dur, 3 ) + 2; break;
-		case 'pilot':  $ok = $score <= $dur * 600 + $wave * $wave * 100 + 2000 && $wave <= intdiv( $dur, 4 ) + 2; break;
+		case 'pilot':  $ok = $score <= $dur * 2500 + $wave * $wave * 400 + 5000 && $wave <= intdiv( $dur, 4 ) + 2; break;
 		case 'memory': $ok = $score <= $wave * $wave * $wave * 4 + $wave * 80 + 1000 && $wave <= intdiv( $dur, 2 ) + 2; break;
 		case 'color':  $ok = $score <= $dur * 400 + 1000 && $wave <= intdiv( $dur, 3 ) + 2; break;
 		default:       $ok = $score <= $dur * 550 + 2000 && $wave <= intdiv( $dur, 2 ) + 2;
