@@ -331,6 +331,26 @@ function noise(dur,vol){
   for(var i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);var s=AC.createBufferSource(),g=AC.createGain();g.gain.value=vol||.25;s.buffer=b;s.connect(g);g.connect(AC.destination);s.start();
 }
 
+/* Explosion douce et naturelle : souffle filtré qui s'assourdit + petit « boum » grave, légèrement différent à chaque fois */
+var BOOM={nb:null,last:0,stack:0};
+function boomNoise(){if(BOOM.nb)return BOOM.nb;var n=AC.sampleRate*1.6,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0),v=0;
+  for(var i=0;i<n;i++){v=v*.6+(Math.random()*2-1)*.4;d[i]=v}return BOOM.nb=b}
+function softBoom(size){try{boomCore(size)}catch(e){}}
+function boomCore(size){
+  if(muted||!AC)return;var t=AC.currentTime;
+  /* plusieurs explosions en même temps : on adoucit au lieu d'empiler */
+  if(t-BOOM.last<.05){BOOM.stack++;if(BOOM.stack>3)return}else BOOM.stack=0;BOOM.last=t;
+  var big=size||1,vol=Math.min(.5,.16*big)/(1+BOOM.stack*.6),dur=.38+.3*big+Math.random()*.12,rate=.85+Math.random()*.3;
+  var src=AC.createBufferSource();src.buffer=boomNoise();src.playbackRate.value=rate;
+  var lp=AC.createBiquadFilter();lp.type="lowpass";lp.Q.value=.7;
+  lp.frequency.setValueAtTime(1600+900*Math.random(),t);lp.frequency.exponentialRampToValueAtTime(140,t+dur);
+  var gn=AC.createGain();gn.gain.setValueAtTime(.0001,t);gn.gain.exponentialRampToValueAtTime(vol,t+.012);gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  src.connect(lp);lp.connect(gn);gn.connect(sfxBus());src.start(t,Math.random()*.5);src.stop(t+dur+.05);
+  /* petit coup grave */
+  var o=AC.createOscillator(),og=AC.createGain();o.type="sine";o.frequency.setValueAtTime(110/Math.sqrt(big)*rate,t);o.frequency.exponentialRampToValueAtTime(38,t+.25*big);
+  og.gain.setValueAtTime(.0001,t);og.gain.exponentialRampToValueAtTime(vol*.9,t+.01);og.gain.exponentialRampToValueAtTime(.0001,t+.3*big);
+  o.connect(og);og.connect(sfxBus());o.start(t);o.stop(t+.35*big);
+}
 var SFX={
   near:function(c){var f=660+Math.min(c,10)*70;tone(f,f*1.5,.08,"triangle",.06)},
   hit:function(){tone(160,40,.4,"sawtooth",.15);noise(.3,.25)},
@@ -346,8 +366,8 @@ var SFX={
   click:function(){tone(1700,2300,.03,"sine",.07);tone(900,700,.05,"triangle",.045,.025)},
   pew:function(){tone(1600,900,.05,"square",.018)},
   tink:function(){tone(900,700,.04,"triangle",.03)},
-  boom:function(){tone(300,60,.18,"sawtooth",.06);noise(.12,.12)},
-  bomb:function(){noise(.7,.4);tone(90,30,.7,"sawtooth",.15)},
+  boom:function(){softBoom(1)},
+  bomb:function(){softBoom(2.6)},
   wave:function(){[523,659,784,1046].forEach(function(f,i){tone(f,f,.12,"square",.05,i*.08)})},
   siren:function(){tone(520,980,.32,"sawtooth",.06);tone(980,520,.32,"sawtooth",.05,.32)},
   boss:function(){[196,185,175,165].forEach(function(f,i){tone(f,f,.25,"sawtooth",.08,i*.2)})},
