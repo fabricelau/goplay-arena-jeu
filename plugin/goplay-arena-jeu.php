@@ -1,19 +1,19 @@
 <?php
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
- * Description: Mini-jeux pour les tables (QR code) : Arena Defender, Pilot Arena, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.6.0
+ * Description: Mini-jeux pour les tables (QR code) : Arena Defender, GoSpace, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
+ * Version: 1.6.1
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.6.0' );
+define( 'GPAJ_VER', '1.6.1' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
 function gpaj_extra() { $x = get_option( 'gpaj_extra_games', array() ); return is_array( $x ) ? $x : array(); }
 function gpaj_games() { $g = gpaj_base_games(); foreach ( gpaj_extra() as $k => $v ) { if ( empty( $g[ $k ] ) ) { $g[ $k ] = $v['file']; } } return $g; }
-function gpaj_names() { $x = array(); foreach ( gpaj_extra() as $k => $v ) { $x[ $k ] = $v['name']; } return array_merge( $x, array( 'arena' => 'Arena Defender', 'pilot' => 'Pilot Arena', 'pixel' => 'Pixel Rush', 'laser' => 'Laser Reflex', 'chain' => 'Target Chain', 'memory' => 'Memory Grid', 'color' => 'Color Switch' ) ); }
+function gpaj_names() { $x = array(); foreach ( gpaj_extra() as $k => $v ) { $x[ $k ] = $v['name']; } return array_merge( $x, array( 'arena' => 'Arena Defender', 'pilot' => 'GoSpace', 'pixel' => 'Pixel Rush', 'laser' => 'Laser Reflex', 'chain' => 'Target Chain', 'memory' => 'Memory Grid', 'color' => 'Color Switch' ) ); }
 function gpaj_paths() { $x = array(); foreach ( gpaj_extra() as $k => $v ) { $x[ $k ] = '/jeu/' . $k . '/'; } return array_merge( $x, array( 'arena' => '/jeu/', 'pilot' => '/jeu/pilot/', 'pixel' => '/jeu/pixel/', 'laser' => '/jeu/laser/', 'chain' => '/jeu/chain/', 'memory' => '/jeu/memory/', 'color' => '/jeu/color/' ) ); }
 function gpaj_game( $g ) { $g = sanitize_key( (string) $g ); return isset( gpaj_games()[ $g ] ) ? $g : 'arena'; }
 function gpaj_sfx( $game ) { return $game === 'arena' ? '' : '_' . $game; }
