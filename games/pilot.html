@@ -150,7 +150,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <div class="sets">
       <label class="set" for="r_move"><span>Vitesse du vaisseau</span><b id="v_move"></b><input type="range" id="r_move" min="20" max="150" step="5"></label>
       <label class="set" for="r_turn"><span>Vitesse de rotation</span><b id="v_turn"></b><input type="range" id="r_turn" min="10" max="150" step="5"></label>
-      <div class="set"><span>Tir</span><span></span><div class="seg"><button type="button" data-set="fire" data-v="manual">Bouton FEU</button><button type="button" data-set="fire" data-v="auto">Automatique</button></div></div>
       <div class="set" id="row_side"><span>Côté du bouton FEU (en paysage, le joystick va de l'autre côté)</span><span></span><div class="seg"><button type="button" data-set="side" data-v="left">Gauche</button><button type="button" data-set="side" data-v="right">Droite</button></div></div>
       <label class="set" for="r_cad"><span>Cadence de tir</span><b id="v_cad"></b><input type="range" id="r_cad" min="50" max="150" step="5"></label>
       <label class="set" for="r_music"><span>Volume de la musique</span><b id="v_music"></b><input type="range" id="r_music" min="0" max="100" step="5"></label>
@@ -222,7 +221,7 @@ function fmt(n){return Math.round(n).toLocaleString("fr-FR")}
 
 /* ---------- Réglages (mémorisés sur le téléphone) ---------- */
 var SET_DEF={move:60,turn:60,music:60,sfx:80,cad:100,fire:"manual",side:"left"};
-var SET_OPT={fire:["manual","auto"],side:["left","right"]};
+var SET_OPT={fire:["manual"],side:["left","right"]}; /* tir automatique retiré : un ancien réglage « auto » revient au bouton FEU */
 var SET=(function(){var o={};try{o=JSON.parse(store("gpapi_set")||"{}")||{}}catch(e){}var r={};for(var k in SET_DEF){if(SET_OPT[k])r[k]=SET_OPT[k].indexOf(o[k])>=0?o[k]:SET_DEF[k];else r[k]=typeof o[k]==="number"?Math.max(0,Math.min(150,o[k])):SET_DEF[k]}return r})();
 var BUS=null;
 function sfxBus(){if(!AC)return null;if(!BUS){BUS=AC.createGain();BUS.connect(AC.destination)}BUS.gain.value=SET.sfx/100;return BUS}
