@@ -1437,7 +1437,7 @@ function medal(b,ok,sz){
 }
 function renderBadges(){
   var got=badgesGot(),P=badgeStats(false),n=0,box=$("badgeList");box.textContent="";
-  BADGES.forEach(function(b){var ok=!!got[b.id];if(ok)n++;var r=b.v(P),row=document.createElement("div");row.className="badge"+(ok?" got":"");row.style.setProperty("--bc",bcol(b));
+  BADGES.filter(function(b){return got[b.id]}).concat(BADGES.filter(function(b){return !got[b.id]})).forEach(function(b){var ok=!!got[b.id];if(ok)n++;var r=b.v(P),row=document.createElement("div");row.className="badge"+(ok?" got":"");row.style.setProperty("--bc",bcol(b));
     row.appendChild(medal(b,ok));var tx=document.createElement("div");tx.className="btx";var nm=document.createElement("strong");nm.textContent=b.n;var ds=document.createElement("span");ds.textContent=b.d;tx.append(nm,ds);
     if(!ok&&r[1]>1){var bar=document.createElement("i");bar.className="bbar";var f=document.createElement("b");f.style.width=Math.min(100,r[0]/r[1]*100)+"%";bar.appendChild(f);var pv=document.createElement("em");pv.textContent=fmt(Math.min(r[0],r[1]))+" / "+fmt(r[1]);tx.append(bar,pv)}
     if(ok){var dt=document.createElement("em");dt.textContent=TIER[b.t].n+" · obtenu le "+got[b.id].split("-").reverse().join("/");tx.appendChild(dt)}
