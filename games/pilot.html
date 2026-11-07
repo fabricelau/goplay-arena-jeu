@@ -150,6 +150,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
   .how{font-size:13px;line-height:1.25}
   .legend{font-size:12px;gap:4px}.legend div{padding:4px 6px}
   .streak,.best{font-size:13px}
+  .defi{padding:4px 10px;margin:2px auto}.defi strong{font-size:15px}.defi span{font-size:12px}
   .sets{gap:4px 16px;padding:8px 12px}.set{font-size:14px;gap:2px 8px}.set input{height:18px}.seg button{padding:5px 0}
   .box{gap:8px}.play{padding:9px 0}.ghost{padding:8px 0}
 }
@@ -167,8 +168,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .medal.off{background:#1A1440;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12);color:rgba(237,234,255,.35)}
 .obadges{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center}
 .oblab{width:100%;font:700 13px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--bomb)}
+.medal.art{background:none;box-shadow:none;border-radius:0;width:var(--ms);height:var(--ms)}.medal.art canvas{width:100%;height:100%;display:block}.medal.art.off{opacity:.8}
+.defi{display:flex;flex-direction:column;align-items:center;gap:1px;margin:4px auto 2px;padding:8px 14px;max-width:340px;border:1px solid rgba(255,92,240,.45);border-radius:14px;background:linear-gradient(135deg,rgba(255,92,240,.14),rgba(61,240,255,.08));text-align:center}
+.defi .dtop{font:700 11px var(--display);letter-spacing:.22em;color:#FF5CF0}.defi strong{font:700 18px var(--display);color:var(--text)}.defi span{font-size:13px;color:var(--muted);line-height:1.25}.defi em{font-style:normal;font-size:12px;color:var(--cyan);margin-top:2px}.defi em.ok{color:#5CFFB0}
+.share{margin-top:6px;border-color:rgba(255,92,240,.55);color:#FFD6FB}
 .bchip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 3px;font:700 14px var(--display);opacity:0;animation:rise .45s ease-out forwards}
-@media (orientation:landscape) and (max-height:560px){.blist{max-height:58vh;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.badge{padding:5px 8px}.medal{--ms:36px}.wide{width:min(860px,100%)}}
+@media (orientation:landscape) and (max-height:560px){.blist{max-height:58vh;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.badge{padding:5px 8px}.medal{--ms:44px}.wide{width:min(860px,100%)}}
 </style>
 
 <canvas id="c" aria-label="Espace de vol"></canvas>
@@ -198,6 +203,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <div class="col colB">
     <div class="fstip" id="fsTip" hidden><span><b>Plein écran sur iPhone :</b> touche Partager <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8" fill="none" stroke="currentColor" stroke-width="2"/></svg> puis « Sur l'écran d'accueil ». GoSpace s'ouvrira sans la barre de Safari.</span><button type="button" id="fsTipX" aria-label="Masquer l'astuce">✕</button></div>
     <div class="best" id="sBest"></div>
+    <div class="defi" id="sDefi"></div>
     <div class="streak" id="sStreak"></div>
     <button class="play" id="bPlay">JOUER</button>
     <div class="row2">
@@ -228,6 +234,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <div class="obadges" id="oBadges" hidden></div>
     <div class="unlock" id="oUnlock" hidden></div>
     <div class="rank" id="oRank"></div>
+    <button class="ghost share" id="bShare" type="button">Partager mon score</button>
     </div>
     <div class="col colB">
     <div class="rec" id="oRec" hidden>NOUVEAU RECORD</div>
@@ -573,7 +580,8 @@ function newGame(){
   startWave(1);
 }
 function startWave(w){
-  g.wave=w;g.waveT=0;g.hitWave=false;$("hWave").textContent=w;
+  g.wave=w;g.waveT=0;g.hitWave=false;
+  if(w===DEFI_GOAL&&defiWin()){g.defiNew=true;setTimeout(function(){if(g&&g.run){g.banner={txt:"DÉFI RÉUSSI !",sub:DF.n+" · reviens demain",t:2.6};SFX.badge();buzz([40,40,40,40,160])}},2700)}$("hWave").textContent=w;
   var boss=w%5===0;
   g.toSpawn=boss?Math.floor(w/2):7+w*2;g.spawnI=Math.max(.32,1.15-w*.07);g.spawnT=.8;g.between=0;g.bossOn=false;
   setTier(tierOf(w));
@@ -582,7 +590,7 @@ function startWave(w){
   g.banner=boss?null:{txt:"VAGUE "+w,sub:w===1?"Pilote avec le joystick":boss?bk.d:w===3?"Attention aux mines":w===4?"Essaims en approche":w===6?"Gardes à bouclier : prends-les de dos":"",t:2};
   g.pickPlan=[{at:3+Math.random()*5,k:"gem"}];
   if(w>=2&&Math.random()<.6)g.pickPlan.push({at:6+Math.random()*6,k:"gem"});
-  if(w%3===0&&g.lives<3)g.pickPlan.push({at:4+Math.random()*4,k:"shield"});
+  if(w%3===0&&g.lives<(DF.maxL||3))g.pickPlan.push({at:4+Math.random()*4,k:"shield"});
 }
 function pickType(w){
   var r=Math.random(),pool=["drone","drone"];
@@ -604,7 +612,7 @@ function spawnEnemy(type,at){
     g.en.push({type:"mine",x:mp.x,y:mp.y,r:12*S,vx:0,vy:-1,sp:0,t:0,ph:Math.random()*6,fire:4.5+Math.random()*2,stay:0,rot:0,side:-1,inside:true,hp:2,max:2,flash:0});return}
   var T=ET[type],r=T.r*S,base=(65+Math.min(g.wave,25)*6.5)*S,p=at||edgePoint();
   var tx=g.px+(Math.random()-.5)*60*S,ty=g.py+(Math.random()-.5)*60*S,a=Math.atan2(ty-p.y,tx-p.x);
-  var sp=base*(type==="diver"?.8:type==="shooter"?.75:type==="mini"?1.5:type==="guard"?.5:type==="kami"?.35:type==="rock"?.38:1)*(.85+Math.random()*.3);
+  var sp=base*(type==="diver"?.8:type==="shooter"?.75:type==="mini"?1.5:type==="guard"?.5:type==="kami"?.35:type==="rock"?.38:1)*(.85+Math.random()*.3)*(DF.en||1);r*=DF.size||1;
   var e={type:type,x:p.x,y:p.y,r:r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,sp:sp,t:0,ph:Math.random()*6,fire:.8+Math.random(),stay:0,rot:0,side:p.side,inside:false,hp:T.hp+(type==='boss'?g.wave*8:type==='shooter'&&g.wave>=6?1:0),max:0,flash:0};e.max=e.hp;e.face=a;
   if(type==="rock"){var rs=.8+Math.random()*.45;e.r*=rs;e.hp=e.max=Math.round(8*rs);var cxp=W/2+(Math.random()-.5)*W*.6,cyp=(H+TOP)/2+(Math.random()-.5)*H*.5,ra=Math.atan2(cyp-p.y,cxp-p.x);e.vx=Math.cos(ra)*sp;e.vy=Math.sin(ra)*sp;e.spin=(Math.random()-.5)*1.6;e.pts=[];for(var pk=0;pk<9;pk++)e.pts.push(.75+Math.random()*.35)}
   if(type==="kami"){e.lock=1.3}
@@ -625,13 +633,13 @@ function spawnEnemy(type,at){
   }
 }
 function fireBall(e,ang,sp){
-  var v=(sp||(150+Math.min(g.wave,25)*9))*S;
+  var v=(sp||(150+Math.min(g.wave,25)*9))*S*(DF.ball||1);
   g.balls.push({x:e.x+Math.cos(ang)*e.r*.7,y:e.y+Math.sin(ang)*e.r*.7,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,r:(e.type==="boss"?7:6)*S,t:0});
 }
 function aim(e){return Math.atan2(g.py-e.y,g.px-e.x)}
 function addText(x,y,txt,col,size){g.texts.push({x:x,y:y,txt:txt,col:col,size:size||18,t:0})}
 function burst(x,y,col,n,sp){if(g.parts.length>520)g.parts.splice(0,g.parts.length-520);for(var i=0;i<n;i++){var a=Math.random()*7,v=(40+Math.random()*sp)*S;g.parts.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.35+Math.random()*.5,t:0,col:col,s:(1.5+Math.random()*2.5)*S})}}
-function mult(){return Math.min(8,1+Math.floor(g.nearChain/3))}
+function mult(){return Math.min(8,1+Math.floor(g.nearChain/3))*(DF.pts||1)}
 /* ---------- Tir automatique : le vaisseau tire dès qu'un ennemi est dans l'axe de son nez ---------- */
 function angDiff(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b))}
 function autoFire(dt){
@@ -643,7 +651,7 @@ function autoFire(dt){
   var jl=Math.hypot(joy.dx,joy.dy),want=null;
   if(jl>.18)want=Math.atan2(joy.dy,joy.dx);else if(sp0>25*S)want=Math.atan2(g.vy,g.vx);
   if(want!==null){var d0=angDiff(want,g.heading),turn=(2+11*SET.turn/100)*(1+1.8*Math.abs(d0)/Math.PI)*dt;g.heading+=Math.max(-turn,Math.min(turn,d0))}
-  g.fireT-=dt;
+  g.fireT-=dt*(DF.fire?1/DF.fire:1);
   var manual=SET.fire==="manual",holding=manual&&(fb.on||keys[" "]);
   /* jauge : se recharge quand on ne tire pas */
   if(manual){if(holding)fb.rest=0;else{fb.rest+=dt;if(fb.rest>.3)fb.energy=Math.min(1,fb.energy+dt*.45*g.up.cool)}}
@@ -742,7 +750,7 @@ var CARDS=[
   {k:"cap",n:"Grande jauge",d:"Rafales 35 % plus longues",ok:function(){return g.up.cap<2.5},go:function(){g.up.cap*=1.35}},
   {k:"cool",n:"Refroidissement",d:"La jauge se recharge 40 % plus vite",ok:function(){return g.up.cool<2.5},go:function(){g.up.cool*=1.4}},
   {k:"rate",n:"Cadence",d:"+15 % de tirs par seconde",ok:function(){return g.up.rate<2},go:function(){g.up.rate*=1.15}},
-  {k:"shield",n:"Bouclier",d:"Récupère 1 bouclier",ok:function(){return g.lives<3},go:function(){g.lives++}},
+  {k:"shield",n:"Bouclier",d:"Récupère 1 bouclier",ok:function(){return g.lives<(DF.maxL||3)},go:function(){g.lives++}},
   {k:"bubble",n:"Bulle",d:"Une bulle absorbe le prochain choc",ok:function(){return !g.pw.bubble},go:function(){g.pw.bubble=true}},
   {k:"magnet",n:"Aimant",d:"Les bonus viennent à toi",ok:function(){return g.up.magnet<2},go:function(){g.up.magnet++}},
   {k:"supc",n:"Surcharge",d:"Super-attaque 50 % plus vite",ok:function(){return g.up.supc<3},go:function(){g.up.supc*=1.5}},
@@ -783,7 +791,7 @@ function nearMiss(o){
   var m=mult(),pts=20*m;g.score+=pts;g.sup=Math.min(1,g.sup+.012);SFX.near(g.nearChain);buzz(12);
   addText(g.px,g.py-34*S,"FRÔLÉ ! +"+pts,m>2?"#FFB020":"#3DF0FF",m>3?21:17);syncCombo();
 }
-function syncCombo(){var el=$("combo");el.textContent=g.nearChain>=3?("x"+mult()+" · frôlés "+g.nearChain):"";if(g.nearChain>=3&&g.nearChain%3===0){el.classList.remove("pop");void el.offsetWidth;el.classList.add("pop")}}
+function syncCombo(){var el=$("combo");el.textContent=g.nearChain>=3?("x"+Math.min(8,1+Math.floor(g.nearChain/3))+" · frôlés "+g.nearChain):"";if(g.nearChain>=3&&g.nearChain%3===0){el.classList.remove("pop");void el.offsetWidth;el.classList.add("pop")}}
 function track(o,hr){
   var d=Math.hypot(o.x-g.px,o.y-g.py),band=hr+o.r+20*S;
   if(d<hr+o.r){return true}
@@ -810,7 +818,7 @@ function control(dt){
   g.bank+=((Math.max(-1,Math.min(1,g.vx/maxV)))-g.bank)*Math.min(1,dt*10);
 }
 function update(dt){
-  g.t+=dt;g.waveT+=dt;g.score+=dt*10;
+  g.t+=dt;g.waveT+=dt;g.score+=dt*10;if(DF.nosup)g.sup=0;
   if(g.banner){g.banner.t-=dt;if(g.banner.t<=0)g.banner=null}
   control(dt);
   if(g.inv>0)g.inv-=dt;
@@ -890,7 +898,7 @@ function update(dt){
   if(!g.recBeat&&g.rec>0&&g.score>g.rec){g.recBeat=true;g.banner={txt:"RECORD BATTU !",sub:"Continue, chaque point compte",t:1.8};SFX.power();buzz([40,30,40,30,160])}
   /* superpouvoirs : un nouveau apparaît au hasard toutes les 7 à 13 s */
   ["rapid","spread","slow","pierce"].forEach(function(k){if(g.pw[k]>0)g.pw[k]=Math.max(0,g.pw[k]-dt)});
-  if(g.between<=0){g.pwT-=dt;if(g.pwT<=0){g.pwT=7+Math.random()*6;var kinds=["rapid","spread","slow","pierce","bubble","nova"];if(g.wave<2)kinds=["rapid","spread","bubble"];
+  if(g.between<=0){g.pwT-=dt;if(g.pwT<=0){g.pwT=(7+Math.random()*6)*(DF.pw||1);var kinds=["rapid","spread","slow","pierce","bubble","nova"];if(g.wave<2)kinds=["rapid","spread","bubble"];
     var kk=kinds[Math.floor(Math.random()*kinds.length)],pp,tr=0;do{pp={x:40*S+Math.random()*(W-80*S),y:TOP+40*S+Math.random()*(H-TOP-80*S)};tr++}while(Math.hypot(pp.x-g.px,pp.y-g.py)<110*S&&tr<20);
     g.picks.push({k:kk,pw:true,x:pp.x,y:pp.y,r:16*S,t:0});SFX.spawnPw()}}
   for(i=g.picks.length-1;i>=0;i--){
@@ -899,7 +907,7 @@ function update(dt){
     if(Math.hypot(q.x-g.px,q.y-g.py)<q.r+18*S){
       g.picks.splice(i,1);
       if(q.pw){getPower(q.k,q.x,q.y)}
-      else if(q.k==="shield"){g.lives=Math.min(3,g.lives+1);SFX.shield();addText(q.x,q.y-16,"+1 BOUCLIER","#5CFFB0",20);burst(q.x,q.y,"#5CFFB0",18,160)}
+      else if(q.k==="shield"){g.lives=Math.min(DF.maxL||3,g.lives+1);SFX.shield();addText(q.x,q.y-16,"+1 BOUCLIER","#5CFFB0",20);burst(q.x,q.y,"#5CFFB0",18,160)}
       else{var pts=50*mult();g.score+=pts;SFX.pick();addText(q.x,q.y-16,"+"+pts,"#3DF0FF",20);burst(q.x,q.y,"#3DF0FF",16,160)}
       continue;
     }
@@ -1228,38 +1236,122 @@ function syncFsTip(){var t=$("fsTip");if(!t)return;var off=false;try{off=store("
 var TIER={b:{n:"Bronze",c:"#E0915A"},a:{n:"Argent",c:"#D9D4FF"},o:{n:"Or",c:"#FFC22E"},n:{n:"Néon",c:"#FF5CF0"}};
 /* v(P) renvoie [valeur, objectif] ; P mélange les totaux enregistrés et la partie en cours */
 var BADGES=[
- {id:"first",n:"Premier sang",d:"Détruire ton premier ennemi",t:"b",gl:"1",v:function(P){return [P.kills,1]}},
- {id:"k500",n:"Chasseur",d:"500 ennemis détruits au total",t:"a",gl:"500",v:function(P){return [P.kills,500]}},
- {id:"k2500",n:"Exterminateur",d:"2 500 ennemis détruits au total",t:"o",gl:"2,5k",v:function(P){return [P.kills,2500]}},
- {id:"k10000",n:"Légende du vide",d:"10 000 ennemis détruits au total",t:"n",gl:"10k",v:function(P){return [P.kills,10000]}},
- {id:"w5",n:"Pilote",d:"Atteindre la vague 5",t:"b",gl:"V5",v:function(P){return [P.wave,5]}},
- {id:"w10",n:"As du cosmos",d:"Atteindre la vague 10",t:"a",gl:"V10",v:function(P){return [P.wave,10]}},
- {id:"w15",n:"Commandant",d:"Atteindre la vague 15",t:"o",gl:"V15",v:function(P){return [P.wave,15]}},
- {id:"w20",n:"Immortel",d:"Atteindre la vague 20",t:"n",gl:"V20",v:function(P){return [P.wave,20]}},
- {id:"c10",n:"Enchaîneur",d:"Faire un combo ×10",t:"b",gl:"×10",v:function(P){return [P.kc,10]}},
- {id:"c25",n:"Furie",d:"Faire un combo ×25",t:"a",gl:"×25",v:function(P){return [P.kc,25]}},
- {id:"c40",n:"Tempête",d:"Faire un combo ×40",t:"o",gl:"×40",v:function(P){return [P.kc,40]}},
- {id:"s10k",n:"10 000",d:"10 000 points en une partie",t:"b",gl:"10k",v:function(P){return [P.score,10000]}},
- {id:"s50k",n:"50 000",d:"50 000 points en une partie",t:"a",gl:"50k",v:function(P){return [P.score,50000]}},
- {id:"s150k",n:"150 000",d:"150 000 points en une partie",t:"o",gl:"150k",v:function(P){return [P.score,150000]}},
- {id:"spiral",n:"Spirale brisée",d:"Vaincre La Spirale",t:"a",gl:"@",v:function(P){return [P.bk.spiral?1:0,1]}},
- {id:"beam",n:"Phare éteint",d:"Vaincre Le Phare",t:"a",gl:"|",v:function(P){return [P.bk.beam?1:0,1]}},
- {id:"hive",n:"Ruche détruite",d:"Vaincre La Ruche",t:"a",gl:"#",v:function(P){return [P.bk.hive?1:0,1]}},
- {id:"crown",n:"Triple couronne",d:"Vaincre les 3 boss",t:"o",gl:"III",v:function(P){return [(P.bk.spiral?1:0)+(P.bk.beam?1:0)+(P.bk.hive?1:0),3]}},
- {id:"clean",n:"Intouchable",d:"Finir une vague sans perdre de bouclier",t:"b",gl:"0",v:function(P){return [P.clean,1]}},
- {id:"flawless",n:"Sans une égratignure",d:"Finir 5 vagues d'affilée sans être touché",t:"o",gl:"!",v:function(P){return [P.flawless,5]}},
- {id:"graze",n:"Frôleur",d:"30 frôlés en une partie",t:"a",gl:"~",v:function(P){return [P.near,30]}},
- {id:"dash",n:"Danseur",d:"15 dash en une partie",t:"b",gl:">>",v:function(P){return [P.dashes,15]}},
- {id:"supers",n:"Onde de choc",d:"5 super-attaques en une partie",t:"a",gl:"(·)",v:function(P){return [P.supers,5]}},
- {id:"collect",n:"Collectionneur",d:"Ramasser les 6 superpouvoirs en une partie",t:"o",gl:"6",v:function(P){return [P.pwk,6]}},
- {id:"rocks",n:"Démolisseur",d:"50 astéroïdes détruits au total",t:"a",gl:"*",v:function(P){return [P.rocks,50]}},
- {id:"g10",n:"Habitué",d:"Jouer 10 parties",t:"b",gl:"10",v:function(P){return [P.games,10]}},
- {id:"g50",n:"Pilote assidu",d:"Jouer 50 parties",t:"a",gl:"50",v:function(P){return [P.games,50]}},
- {id:"st3",n:"Fidèle",d:"Jouer 3 jours de suite",t:"b",gl:"3j",v:function(P){return [P.streak,3]}},
- {id:"st7",n:"Inarrêtable",d:"Jouer 7 jours de suite",t:"o",gl:"7j",v:function(P){return [P.streak,7]}},
- {id:"ships",n:"Hangar complet",d:"Débloquer tous les vaisseaux",t:"n",gl:"25",v:function(P){return [P.ships,SHIPS.length]}},
- {id:"top1",n:"N°1 du jour",d:"Finir premier du classement du jour",t:"n",gl:"N°1",v:function(P){return [P.top1?1:0,1]}}
+ {id:"first",ic:"cross",n:"Premier sang",d:"Détruire ton premier ennemi",t:"b",gl:"1",v:function(P){return [P.kills,1]}},
+ {id:"k500",ic:"cross",n:"Chasseur",d:"500 ennemis détruits au total",t:"a",gl:"500",v:function(P){return [P.kills,500]}},
+ {id:"k2500",ic:"skull",n:"Exterminateur",d:"2 500 ennemis détruits au total",t:"o",gl:"2,5k",v:function(P){return [P.kills,2500]}},
+ {id:"k10000",ic:"skull",n:"Légende du vide",d:"10 000 ennemis détruits au total",t:"n",gl:"10k",v:function(P){return [P.kills,10000]}},
+ {id:"w5",ic:"planet",n:"Pilote",d:"Atteindre la vague 5",t:"b",gl:"V5",v:function(P){return [P.wave,5]}},
+ {id:"w10",ic:"planet",n:"As du cosmos",d:"Atteindre la vague 10",t:"a",gl:"V10",v:function(P){return [P.wave,10]}},
+ {id:"w15",ic:"planet",n:"Commandant",d:"Atteindre la vague 15",t:"o",gl:"V15",v:function(P){return [P.wave,15]}},
+ {id:"w20",ic:"planet",n:"Immortel",d:"Atteindre la vague 20",t:"n",gl:"V20",v:function(P){return [P.wave,20]}},
+ {id:"c10",ic:"bolt",n:"Enchaîneur",d:"Faire un combo ×10",t:"b",gl:"×10",v:function(P){return [P.kc,10]}},
+ {id:"c25",ic:"bolt",n:"Furie",d:"Faire un combo ×25",t:"a",gl:"×25",v:function(P){return [P.kc,25]}},
+ {id:"c40",ic:"bolt",n:"Tempête",d:"Faire un combo ×40",t:"o",gl:"×40",v:function(P){return [P.kc,40]}},
+ {id:"s10k",ic:"star",n:"10 000",d:"10 000 points en une partie",t:"b",gl:"10k",v:function(P){return [P.score,10000]}},
+ {id:"s50k",ic:"star",n:"50 000",d:"50 000 points en une partie",t:"a",gl:"50k",v:function(P){return [P.score,50000]}},
+ {id:"s150k",ic:"star",n:"150 000",d:"150 000 points en une partie",t:"o",gl:"150k",v:function(P){return [P.score,150000]}},
+ {id:"spiral",ic:"spiral",n:"Spirale brisée",d:"Vaincre La Spirale",t:"a",gl:"",v:function(P){return [P.bk.spiral?1:0,1]}},
+ {id:"beam",ic:"beam",n:"Phare éteint",d:"Vaincre Le Phare",t:"a",gl:"",v:function(P){return [P.bk.beam?1:0,1]}},
+ {id:"hive",ic:"hive",n:"Ruche détruite",d:"Vaincre La Ruche",t:"a",gl:"",v:function(P){return [P.bk.hive?1:0,1]}},
+ {id:"crown",ic:"crown",n:"Triple couronne",d:"Vaincre les 3 boss",t:"o",gl:"III",v:function(P){return [(P.bk.spiral?1:0)+(P.bk.beam?1:0)+(P.bk.hive?1:0),3]}},
+ {id:"clean",ic:"shield",n:"Intouchable",d:"Finir une vague sans perdre de bouclier",t:"b",gl:"1",v:function(P){return [P.clean,1]}},
+ {id:"flawless",ic:"shield",n:"Sans une égratignure",d:"Finir 5 vagues d'affilée sans être touché",t:"o",gl:"5",v:function(P){return [P.flawless,5]}},
+ {id:"graze",ic:"comet",n:"Frôleur",d:"30 frôlés en une partie",t:"a",gl:"30",v:function(P){return [P.near,30]}},
+ {id:"dash",ic:"dash",n:"Danseur",d:"15 dash en une partie",t:"b",gl:"15",v:function(P){return [P.dashes,15]}},
+ {id:"supers",ic:"wave",n:"Onde de choc",d:"5 super-attaques en une partie",t:"a",gl:"5",v:function(P){return [P.supers,5]}},
+ {id:"collect",ic:"gem",n:"Collectionneur",d:"Ramasser les 6 superpouvoirs en une partie",t:"o",gl:"6",v:function(P){return [P.pwk,6]}},
+ {id:"rocks",ic:"rock",n:"Démolisseur",d:"50 astéroïdes détruits au total",t:"a",gl:"50",v:function(P){return [P.rocks,50]}},
+ {id:"g10",ic:"pad",n:"Habitué",d:"Jouer 10 parties",t:"b",gl:"10",v:function(P){return [P.games,10]}},
+ {id:"g50",ic:"pad",n:"Pilote assidu",d:"Jouer 50 parties",t:"a",gl:"50",v:function(P){return [P.games,50]}},
+ {id:"st3",ic:"flame",n:"Fidèle",d:"Jouer 3 jours de suite",t:"b",gl:"3j",v:function(P){return [P.streak,3]}},
+ {id:"st7",ic:"flame",n:"Inarrêtable",d:"Jouer 7 jours de suite",t:"o",gl:"7j",v:function(P){return [P.streak,7]}},
+ {id:"k100",ic:"cross",n:"Tireur",d:"100 ennemis détruits au total",t:"b",gl:"100",v:function(P){return [P.kills,100]}},
+ {id:"k25000",ic:"skull",n:"Fléau galactique",d:"25 000 ennemis détruits au total",t:"n",gl:"25k",v:function(P){return [P.kills,25000]}},
+ {id:"k5000",ic:"skull",n:"Faucheur",d:"5 000 ennemis détruits au total",t:"o",gl:"5k",v:function(P){return [P.kills,5000]}},
+ {id:"w3",ic:"planet",n:"Décollage",d:"Atteindre la vague 3",t:"b",gl:"V3",v:function(P){return [P.wave,3]}},
+ {id:"w25",ic:"planet",n:"Au-delà des étoiles",d:"Atteindre la vague 25",t:"n",gl:"V25",v:function(P){return [P.wave,25]}},
+ {id:"c60",ic:"bolt",n:"Ouragan",d:"Faire un combo ×60",t:"n",gl:"×60",v:function(P){return [P.kc,60]}},
+ {id:"s25k",ic:"star",n:"25 000",d:"25 000 points en une partie",t:"b",gl:"25k",v:function(P){return [P.score,25000]}},
+ {id:"s300k",ic:"star",n:"300 000",d:"300 000 points en une partie",t:"n",gl:"300k",v:function(P){return [P.score,300000]}},
+ {id:"boss1",ic:"crown",n:"Tueur de géant",d:"Vaincre ton premier boss",t:"b",gl:"1",v:function(P){return [P.boss,1]}},
+ {id:"boss10",ic:"crown",n:"Chasseur de boss",d:"Vaincre 10 boss au total",t:"o",gl:"10",v:function(P){return [P.boss,10]}},
+ {id:"graze60",ic:"comet",n:"Funambule",d:"60 frôlés en une partie",t:"o",gl:"60",v:function(P){return [P.near,60]}},
+ {id:"dash40",ic:"dash",n:"Éclair vivant",d:"40 dash en une partie",t:"o",gl:"40",v:function(P){return [P.dashes,40]}},
+ {id:"supers12",ic:"wave",n:"Big bang",d:"12 super-attaques en une partie",t:"o",gl:"12",v:function(P){return [P.supers,12]}},
+ {id:"rocks200",ic:"rock",n:"Briseur de mondes",d:"200 astéroïdes détruits au total",t:"o",gl:"200",v:function(P){return [P.rocks,200]}},
+ {id:"g100",ic:"pad",n:"Vétéran",d:"Jouer 100 parties",t:"o",gl:"100",v:function(P){return [P.games,100]}},
+ {id:"g250",ic:"pad",n:"Pilier de l'arène",d:"Jouer 250 parties",t:"n",gl:"250",v:function(P){return [P.games,250]}},
+ {id:"st14",ic:"flame",n:"Flamme éternelle",d:"Jouer 14 jours de suite",t:"n",gl:"14j",v:function(P){return [P.streak,14]}},
+ {id:"ship10",ic:"ship",n:"Flotte",d:"Débloquer 10 vaisseaux",t:"a",gl:"10",v:function(P){return [P.ships,10]}},
+ {id:"ship20",ic:"ship",n:"Armada",d:"Débloquer 20 vaisseaux",t:"o",gl:"20",v:function(P){return [P.ships,20]}},
+ {id:"def1",ic:"target2",n:"Défi relevé",d:"Réussir un défi du jour",t:"b",gl:"1",v:function(P){return [P.defi,1]}},
+ {id:"def7",ic:"target2",n:"Maître des défis",d:"Réussir 7 défis du jour",t:"o",gl:"7",v:function(P){return [P.defi,7]}},
+ {id:"def30",ic:"target2",n:"Défi permanent",d:"Réussir 30 défis du jour",t:"n",gl:"30",v:function(P){return [P.defi,30]}},
+ {id:"ships",ic:"ship",n:"Hangar complet",d:"Débloquer tous les vaisseaux",t:"n",gl:"25",v:function(P){return [P.ships,SHIPS.length]}},
+ {id:"top1",ic:"trophy",n:"N°1 du jour",d:"Finir premier du classement du jour",t:"n",gl:"N°1",v:function(P){return [P.top1?1:0,1]}}
 ];
+var BORD=["first","k100","k500","k2500","k5000","k10000","k25000","w3","w5","w10","w15","w20","w25","c10","c25","c40","c60","s10k","s25k","s50k","s150k","s300k","boss1","spiral","beam","hive","crown","boss10","clean","flawless","graze","graze60","dash","dash40","supers","supers12","collect","rocks","rocks200","g10","g50","g100","g250","st3","st7","st14","def1","def7","def30","ship10","ship20","ships","top1"];BADGES.sort(function(x,y){return BORD.indexOf(x.id)-BORD.indexOf(y.id)});
+/* ---------- Illustrations des badges (dessinées en vectoriel, mises en cache) ---------- */
+var TPAL={b:["#FFD2AE","#E0915A","#7A3E1C"],a:["#FFFFFF","#C9C6E8","#5B587E"],o:["#FFF4B8","#FFC22E","#8A5A00"],n:["#FFD6FB","#FF5CF0","#6A0F7A"]};
+var GPAL=["#5A5680","#38335E","#1A1538"];
+function medalPath(c,t,R){
+  c.beginPath();
+  if(t==="b"){c.arc(0,0,R,0,7)}
+  else if(t==="a"){for(var i=0;i<6;i++){var a=-Math.PI/2+i*Math.PI/3;i?c.lineTo(Math.cos(a)*R,Math.sin(a)*R):c.moveTo(Math.cos(a)*R,Math.sin(a)*R)}}
+  else if(t==="o"){for(var i=0;i<24;i++){var a=-Math.PI/2+i*Math.PI/12,r=i%2?R*.9:R;i?c.lineTo(Math.cos(a)*r,Math.sin(a)*r):c.moveTo(Math.cos(a)*r,Math.sin(a)*r)}}
+  else{for(var i=0;i<16;i++){var a=-Math.PI/2+i*Math.PI/8,r=i%2?R*.8:R;i?c.lineTo(Math.cos(a)*r,Math.sin(a)*r):c.moveTo(Math.cos(a)*r,Math.sin(a)*r)}}
+  c.closePath();
+}
+function medalIcon(c,k,u){
+  var L=function(){c.stroke()},F=function(){c.fill()};
+  c.lineJoin="round";c.lineCap="round";c.beginPath();
+  switch(k){
+  case"cross":c.arc(0,0,u*.62,0,7);L();c.beginPath();c.arc(0,0,u*.22,0,7);F();c.beginPath();[[0,-1],[0,1],[-1,0],[1,0]].forEach(function(d){c.moveTo(d[0]*u*.35,d[1]*u*.35);c.lineTo(d[0]*u*.95,d[1]*u*.95)});L();break;
+  case"skull":c.arc(0,-u*.12,u*.62,Math.PI*.82,Math.PI*2.18);c.lineTo(u*.38,u*.62);c.lineTo(-u*.38,u*.62);c.closePath();F();c.save();c.globalCompositeOperation="destination-out";c.beginPath();c.arc(-u*.24,-u*.1,u*.17,0,7);c.arc(u*.24,-u*.1,u*.17,0,7);F();c.beginPath();c.moveTo(0,u*.12);c.lineTo(u*.09,u*.3);c.lineTo(-u*.09,u*.3);F();c.fillRect(-u*.2,u*.44,u*.06,u*.2);c.fillRect(-u*.03,u*.44,u*.06,u*.2);c.fillRect(u*.14,u*.44,u*.06,u*.2);c.restore();break;
+  case"planet":c.arc(0,0,u*.5,0,7);F();c.beginPath();c.ellipse(0,0,u*.98,u*.28,-.4,0,7);c.lineWidth*=1.1;L();c.save();c.globalCompositeOperation="destination-out";c.beginPath();c.ellipse(0,0,u*.98,u*.28,-.4,Math.PI*1.05,Math.PI*1.95);c.lineWidth*=1.9;c.stroke();c.restore();c.beginPath();c.ellipse(0,0,u*.98,u*.28,-.4,Math.PI*1.08,Math.PI*1.92);c.stroke();break;
+  case"bolt":c.moveTo(u*.18,-u*.95);c.lineTo(-u*.5,u*.12);c.lineTo(-u*.02,u*.12);c.lineTo(-u*.2,u*.95);c.lineTo(u*.52,-u*.18);c.lineTo(u*.04,-u*.18);c.closePath();F();break;
+  case"star":for(var i=0;i<10;i++){var a=-Math.PI/2+i*Math.PI/5,r=i%2?u*.4:u*.95;i?c.lineTo(Math.cos(a)*r,Math.sin(a)*r):c.moveTo(Math.cos(a)*r,Math.sin(a)*r)}c.closePath();F();break;
+  case"spiral":for(var i=0;i<=60;i++){var a=i*.22,r=u*.06+i*u*.014;i?c.lineTo(Math.cos(a)*r,Math.sin(a)*r):c.moveTo(Math.cos(a)*r,Math.sin(a)*r)}c.lineWidth*=1.3;L();break;
+  case"beam":c.moveTo(-u*.22,u*.9);c.lineTo(-u*.14,-u*.3);c.lineTo(u*.14,-u*.3);c.lineTo(u*.22,u*.9);c.closePath();F();c.beginPath();c.arc(0,-u*.48,u*.2,0,7);F();c.beginPath();c.moveTo(u*.2,-u*.48);c.lineTo(u*.98,-u*.85);c.lineTo(u*.98,-u*.1);c.closePath();c.globalAlpha*=.55;F();c.beginPath();c.moveTo(-u*.2,-u*.48);c.lineTo(-u*.98,-u*.85);c.lineTo(-u*.98,-u*.1);c.closePath();F();c.globalAlpha/=.55;break;
+  case"hive":[[0,0],[0,-.62],[0,.62],[-.54,-.31],[.54,-.31],[-.54,.31],[.54,.31]].forEach(function(p){c.moveTo(p[0]*u+u*.3,p[1]*u);for(var i=1;i<6;i++){var a=i*Math.PI/3;c.lineTo(p[0]*u+Math.cos(a)*u*.3,p[1]*u+Math.sin(a)*u*.3)}c.closePath()});F();break;
+  case"crown":c.moveTo(-u*.85,u*.55);c.lineTo(-u*.95,-u*.45);c.lineTo(-u*.45,0);c.lineTo(0,-u*.7);c.lineTo(u*.45,0);c.lineTo(u*.95,-u*.45);c.lineTo(u*.85,u*.55);c.closePath();F();c.fillRect(-u*.85,u*.62,u*1.7,u*.2);break;
+  case"shield":c.moveTo(0,-u*.95);c.lineTo(u*.8,-u*.6);c.quadraticCurveTo(u*.8,u*.5,0,u*.95);c.quadraticCurveTo(-u*.8,u*.5,-u*.8,-u*.6);c.closePath();F();c.save();c.globalCompositeOperation="destination-out";c.beginPath();c.moveTo(-u*.35,0);c.lineTo(-u*.08,u*.28);c.lineTo(u*.4,-u*.25);c.lineWidth=u*.18;c.stroke();c.restore();break;
+  case"comet":c.arc(u*.4,-u*.4,u*.3,0,7);F();c.beginPath();c.moveTo(u*.18,-u*.6);c.lineTo(-u*.9,u*.3);c.lineTo(u*.6,-u*.18);c.closePath();c.globalAlpha*=.7;F();c.globalAlpha/=.7;c.beginPath();c.moveTo(-u*.6,u*.7);c.lineTo(-u*.2,u*.3);c.moveTo(-u*.1,u*.85);c.lineTo(u*.15,u*.55);L();break;
+  case"dash":[-.45,.2].forEach(function(o){c.moveTo(o*u,-u*.6);c.lineTo((o+.5)*u,0);c.lineTo(o*u,u*.6)});c.lineWidth*=1.6;L();break;
+  case"wave":c.arc(0,0,u*.2,0,7);F();[.48,.74,.98].forEach(function(r,i){c.beginPath();c.globalAlpha*=1-i*.22;c.arc(0,0,u*r,0,7);L();c.globalAlpha/=1-i*.22});break;
+  case"gem":c.moveTo(-u*.85,-u*.3);c.lineTo(-u*.45,-u*.75);c.lineTo(u*.45,-u*.75);c.lineTo(u*.85,-u*.3);c.lineTo(0,u*.9);c.closePath();F();c.save();c.globalCompositeOperation="destination-out";c.beginPath();c.moveTo(-u*.85,-u*.3);c.lineTo(u*.85,-u*.3);c.moveTo(-u*.3,-u*.3);c.lineTo(0,u*.8);c.lineTo(u*.3,-u*.3);c.moveTo(-u*.45,-u*.75);c.lineTo(-u*.3,-u*.3);c.moveTo(u*.45,-u*.75);c.lineTo(u*.3,-u*.3);c.lineWidth=u*.07;c.stroke();c.restore();break;
+  case"rock":for(var i=0;i<9;i++){var a=i/9*Math.PI*2,r=u*(.7+[0,.2,-.1,.15,-.05,.22,-.12,.1,.05][i]);i?c.lineTo(Math.cos(a)*r,Math.sin(a)*r):c.moveTo(Math.cos(a)*r,Math.sin(a)*r)}c.closePath();F();c.save();c.globalCompositeOperation="destination-out";c.beginPath();c.arc(-u*.2,-u*.15,u*.17,0,7);c.arc(u*.3,u*.22,u*.11,0,7);c.arc(u*.12,-u*.38,u*.07,0,7);F();c.restore();break;
+  case"pad":c.moveTo(-u*.55,-u*.35);c.lineTo(u*.55,-u*.35);c.quadraticCurveTo(u*1,-u*.35,u*.95,u*.25);c.quadraticCurveTo(u*.9,u*.75,u*.5,u*.45);c.lineTo(-u*.5,u*.45);c.quadraticCurveTo(-u*.9,u*.75,-u*.95,u*.25);c.quadraticCurveTo(-u*1,-u*.35,-u*.55,-u*.35);F();c.save();c.globalCompositeOperation="destination-out";c.fillRect(-u*.6,-u*.06,u*.36,u*.11);c.fillRect(-u*.47,-u*.19,u*.1,u*.37);c.beginPath();c.arc(u*.42,-u*.1,u*.08,0,7);c.arc(u*.58,u*.06,u*.08,0,7);F();c.restore();break;
+  case"flame":c.moveTo(0,-u*.95);c.bezierCurveTo(u*.3,-u*.5,u*.8,-u*.2,u*.7,u*.3);c.bezierCurveTo(u*.62,u*.8,u*.2,u*.95,0,u*.95);c.bezierCurveTo(-u*.2,u*.95,-u*.62,u*.8,-u*.7,u*.3);c.bezierCurveTo(-u*.76,-u*.1,-u*.4,-u*.25,-u*.32,-u*.55);c.bezierCurveTo(-u*.1,-u*.3,-u*.05,-u*.6,0,-u*.95);F();c.save();c.globalCompositeOperation="destination-out";c.beginPath();c.moveTo(0,-u*.05);c.bezierCurveTo(u*.35,u*.25,u*.35,u*.75,0,u*.75);c.bezierCurveTo(-u*.35,u*.75,-u*.3,u*.35,0,-u*.05);c.globalAlpha=.6;F();c.restore();break;
+  case"target2":c.arc(0,0,u*.9,0,7);L();c.beginPath();c.arc(0,0,u*.55,0,7);L();c.beginPath();c.arc(0,0,u*.2,0,7);F();c.beginPath();c.moveTo(u*.95,-u*.95);c.lineTo(u*.12,-u*.12);c.lineWidth*=1.2;L();c.beginPath();c.moveTo(u*.95,-u*.95);c.lineTo(u*.55,-u*.9);c.lineTo(u*.9,-u*.55);c.closePath();F();break;
+  case"ship":c.moveTo(0,-u*.95);c.lineTo(u*.75,u*.75);c.lineTo(u*.25,u*.45);c.lineTo(-u*.25,u*.45);c.lineTo(-u*.75,u*.75);c.closePath();F();c.save();c.globalCompositeOperation="destination-out";c.beginPath();c.moveTo(0,-u*.4);c.lineTo(u*.18,u*.1);c.lineTo(-u*.18,u*.1);c.closePath();F();c.restore();break;
+  case"trophy":c.moveTo(-u*.55,-u*.8);c.lineTo(u*.55,-u*.8);c.quadraticCurveTo(u*.55,u*.15,0,u*.2);c.quadraticCurveTo(-u*.55,u*.15,-u*.55,-u*.8);F();c.beginPath();c.arc(-u*.55,-u*.45,u*.28,Math.PI*.5,Math.PI*1.5);c.moveTo(u*.55,-u*.73);c.arc(u*.55,-u*.45,u*.28,-Math.PI*.5,Math.PI*.5);L();c.fillRect(-u*.09,u*.15,u*.18,u*.42);c.fillRect(-u*.42,u*.55,u*.84,u*.22);c.save();c.globalCompositeOperation="destination-out";c.font="900 "+(u*.62)+"px 'Chakra Petch',sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("1",0,-u*.36);c.restore();break;
+  }
+}
+var MEDAL_CACHE={};
+function medalCanvas(b,ok,px){
+  var dpr=Math.min(3,window.devicePixelRatio||1),key=b.id+(ok?1:0)+"_"+px+"_"+dpr;if(MEDAL_CACHE[key])return MEDAL_CACHE[key];
+  var cv=document.createElement("canvas");cv.width=cv.height=Math.round(px*dpr);var c=cv.getContext("2d");if(!c)return cv;
+  c.scale(dpr,dpr);c.translate(px/2,px/2);var R=px*.44,P=ok?TPAL[b.t]:GPAL,t=b.t;
+  try{
+  if(ok&&(t==="o"||t==="n")){c.save();for(var i=0;i<(t==="n"?16:12);i++){c.rotate(Math.PI*2/(t==="n"?16:12));c.beginPath();c.moveTo(-R*.07,0);c.lineTo(0,-R*1.13);c.lineTo(R*.07,0);c.fillStyle=P[1];c.globalAlpha=.35;c.fill()}c.restore();c.globalAlpha=1}
+  if(ok&&t!=="b"){c.save();for(var s=-1;s<=1;s+=2)for(var i=0;i<6;i++){var a=Math.PI*.5+s*(.35+i*.3);c.save();c.translate(Math.cos(a)*R*.98,Math.sin(a)*R*.98);c.rotate(a+s*Math.PI*.35);c.beginPath();c.ellipse(0,0,R*.16,R*.065,0,0,7);c.fillStyle=t==="a"?"#9ED9C0":P[1];c.fill();c.restore()}c.restore()}
+  var gr=c.createRadialGradient(-R*.35,-R*.4,R*.05,0,0,R*1.05);gr.addColorStop(0,P[0]);gr.addColorStop(.45,P[1]);gr.addColorStop(1,P[2]);
+  medalPath(c,t,R*.86);c.fillStyle=gr;if(ok){c.shadowColor=P[1];c.shadowBlur=R*.35}c.fill();c.shadowBlur=0;c.lineWidth=Math.max(1,R*.05);c.strokeStyle=P[2];c.stroke();
+  var ir=R*.62,g2=c.createRadialGradient(0,-ir*.4,ir*.1,0,0,ir);g2.addColorStop(0,ok?"#2A1F6E":"#1C1840");g2.addColorStop(1,ok?"#0B0726":"#0E0B24");
+  c.beginPath();c.arc(0,0,ir,0,7);c.fillStyle=g2;c.fill();c.lineWidth=Math.max(1,R*.06);c.strokeStyle=ok?P[0]:"#4A4570";c.stroke();
+  c.save();c.beginPath();c.arc(0,0,ir,0,7);c.clip();c.beginPath();c.ellipse(-ir*.2,-ir*.75,ir*.95,ir*.45,-.3,0,7);c.fillStyle="rgba(255,255,255,.08)";c.fill();c.restore();
+  c.save();var ic=ok?(t==="a"?"#FFFFFF":P[0]):"#6A6590";c.fillStyle=ic;c.strokeStyle=ic;c.lineWidth=Math.max(1.2,R*.085);if(ok){c.shadowColor=P[1];c.shadowBlur=R*.25}
+  var lay=document.createElement("canvas");lay.width=lay.height=cv.width;var lc=lay.getContext("2d");
+  if(lc){lc.scale(dpr,dpr);lc.translate(px/2,px/2);lc.fillStyle=ic;lc.strokeStyle=ic;lc.lineWidth=c.lineWidth;medalIcon(lc,b.ic||"star",ir*.62);c.setTransform(1,0,0,1,0,0);c.drawImage(lay,0,0)}
+  c.restore();
+  if(px>=40&&b.gl){c.setTransform(dpr,0,0,dpr,px/2*dpr,px/2*dpr);var fs=Math.max(7,R*.27),tw=Math.max(R*.7,b.gl.length*fs*.62+fs*.6),ry=R*.78;
+    c.beginPath();c.moveTo(-tw/2-fs*.4,ry-fs*.55);c.lineTo(tw/2+fs*.4,ry-fs*.55);c.lineTo(tw/2,ry);c.lineTo(tw/2+fs*.4,ry+fs*.55);c.lineTo(-tw/2-fs*.4,ry+fs*.55);c.lineTo(-tw/2,ry);c.closePath();
+    c.fillStyle=ok?P[2]:"#25204A";c.fill();c.lineWidth=1;c.strokeStyle=ok?P[0]:"#4A4570";c.stroke();
+    c.fillStyle=ok?"#FFFFFF":"#8A85B0";c.font="700 "+fs+"px 'Chakra Petch',sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText(b.gl,0,ry+fs*.05)}
+  }catch(e){}
+  MEDAL_CACHE[key]=cv;return cv;
+}
 function badgesGot(){var o={};try{o=JSON.parse(store("gpapi_badges")||"{}")||{}}catch(e){}return o}
 function badgeStats(live){
   var p=prog(),cur=live&&g?g:null,got=badgesGot();
@@ -1268,7 +1360,7 @@ function badgeStats(live){
     bk:Object.assign({},p.bossKinds,cur?cur.bossKinds:{}),clean:(cur&&cur.cleanWaves)||got.clean?1:0,
     flawless:cur&&!cur.everHit?cur.cleanWaves:(got.flawless?5:0),
     near:cur?cur.near:0,dashes:cur?cur.dashes:0,supers:cur?cur.supers:0,pwk:cur?Object.keys(cur.pwKinds).length:0,rocks:p.rocks+add("rocksK"),
-    games:p.games,streak:Math.max(p.bestStreak,streak()),ships:SHIPS.filter(function(sh){return sh.ok(p)}).length,top1:got.top1};
+    defi:defiCount(),boss:p.boss+(cur&&!cur.saved?cur.bossKills:0),games:p.games,streak:Math.max(p.bestStreak,streak()),ships:SHIPS.filter(function(sh){return sh.ok(p)}).length,top1:got.top1};
 }
 function unlockBadge(id){
   var got=badgesGot();if(got[id])return false;got[id]=dayStr(0);store("gpapi_badges",JSON.stringify(got));
@@ -1281,8 +1373,9 @@ function badgeCheck(final){
   BADGES.forEach(function(b){if(got[b.id]||b.id==="top1")return;var r=b.v(P);if(r[0]>=r[1])unlockBadge(b.id)});
 }
 function medal(b,ok,sz){
-  var c=document.createElement("div");c.className="medal"+(ok?"":" off");c.style.setProperty("--tc",TIER[b.t].c);if(sz)c.style.setProperty("--ms",sz+"px");
-  var i=document.createElement("span");i.textContent=b.gl;c.appendChild(i);return c;
+  var px=sz||56,c=document.createElement("div");c.className="medal art"+(ok?"":" off");c.style.setProperty("--ms",px+"px");
+  var src=medalCanvas(b,ok,px),cv=document.createElement("canvas");cv.width=src.width;cv.height=src.height;try{cv.getContext("2d").drawImage(src,0,0)}catch(e){}
+  c.appendChild(cv);c.setAttribute("aria-hidden","true");return c;
 }
 function renderBadges(){
   var got=badgesGot(),P=badgeStats(false),n=0,box=$("badgeList");box.textContent="";
@@ -1298,11 +1391,69 @@ function drawToasts(){
   if(!g||!g.toasts.length)return;var to=g.toasts[0];to.t+=1/60;var T=2.6,k=to.t,y=TOP+46*S;
   var a=k<.25?k/.25:k>T-.4?Math.max(0,(T-k)/.4):1,w=Math.min(W-32*S,280*S),x=W/2-w/2,h=50*S,col=TIER[to.b.t].c;
   cx.globalAlpha=a;cx.fillStyle="rgba(12,8,36,.92)";cx.fillRect(x,y,w,h);cx.strokeStyle=col;cx.lineWidth=2*S;cx.strokeRect(x,y,w,h);
-  cx.beginPath();cx.arc(x+26*S,y+h/2,16*S,0,7);cx.fillStyle=col;cx.fill();
-  cx.fillStyle="#07051A";cx.font="700 "+Math.round(11*S)+"px 'Chakra Petch',sans-serif";cx.textAlign="center";cx.textBaseline="middle";cx.fillText(to.b.gl,x+26*S,y+h/2+1);
+  var mi=medalCanvas(to.b,true,64);try{cx.drawImage(mi,x+4*S,y+3*S,44*S,44*S)}catch(e){}
   cx.textAlign="left";cx.fillStyle=col;cx.font="700 "+Math.round(10*S)+"px 'Chakra Petch',sans-serif";cx.fillText("BADGE DÉBLOQUÉ · "+TIER[to.b.t].n.toUpperCase(),x+50*S,y+17*S);
   cx.fillStyle="#EDEAFF";cx.font="700 "+Math.round(15*S)+"px 'Chakra Petch',sans-serif";cx.fillText(to.b.n,x+50*S,y+34*S);cx.globalAlpha=1;
   if(k>T)g.toasts.shift();
+}
+/* ---------- Défi du jour : une règle spéciale qui change chaque jour (même règle pour tout le monde) ---------- */
+var DEFIS=[
+ {k:"turbo",n:"Boules turbo",d:"Les tirs ennemis vont 2× plus vite",x:"Points ×1,5",ball:2,pts:1.5},
+ {k:"onelife",n:"Une seule vie",d:"Un seul bouclier, aucun soin",x:"Points ×2",lives:1,maxL:1,pts:2},
+ {k:"rain",n:"Pluie de pouvoirs",d:"Les superpouvoirs tombent 2× plus souvent",x:"Points normaux",pw:.5,pts:1},
+ {k:"rush",n:"Hyper-vitesse",d:"Les ennemis foncent 35 % plus vite",x:"Points ×1,4",en:1.35,pts:1.4},
+ {k:"gun",n:"Gâchette folle",d:"Ton canon tire 2× plus vite",x:"Points normaux",fire:.5,pts:1},
+ {k:"nosup",n:"Sans filet",d:"Pas de super-attaque aujourd'hui",x:"Points ×1,8",nosup:1,pts:1.8},
+ {k:"giant",n:"Géants",d:"Des ennemis 30 % plus gros",x:"Points ×1,2",size:1.3,pts:1.2}
+];
+var DEFI_GOAL=5;
+function dayNum(){var p=dayStr(0).split("-");return Math.floor(Date.UTC(+p[0],+p[1]-1,+p[2])/864e5)}
+function defiToday(){var i=((dayNum()*5+3)%DEFIS.length+DEFIS.length)%DEFIS.length;return DEFIS[i]}
+var DF=defiToday();
+function defiData(){var o={};try{o=JSON.parse(store("gpapi_defi")||"{}")||{}}catch(e){}o.days=o.days||{};return o}
+function defiDone(){return !!defiData().days[dayStr(0)]}
+function defiCount(){return Object.keys(defiData().days).length}
+function defiWin(){var o=defiData(),t=dayStr(0);if(o.days[t])return false;o.days[t]=DF.k;store("gpapi_defi",JSON.stringify(o));return true}
+function syncDefi(){DF=defiToday();var el=$("sDefi");if(!el)return;el.textContent="";
+  var a=document.createElement("div");a.className="dtop";a.textContent="DÉFI DU JOUR";var dn=document.createElement("strong");dn.textContent=DF.n;
+  var dd=document.createElement("span");dd.textContent=DF.d+" · "+DF.x;var st=document.createElement("em");
+  st.textContent=defiDone()?"✓ Défi réussi aujourd'hui · reviens demain pour le suivant":"Objectif : atteindre la vague "+DEFI_GOAL;if(defiDone())st.className="ok";
+  el.append(a,dn,dd,st)}
+/* ---------- Partage du score : image prête pour les réseaux ---------- */
+var shareRank=0;
+function shareImage(){
+  var r=lastResult||{score:0,wave:0,kills:0},W2=1080,H2=1350,cv=document.createElement("canvas");cv.width=W2;cv.height=H2;var c=cv.getContext("2d");
+  var bg=c.createLinearGradient(0,0,0,H2);bg.addColorStop(0,"#140A3C");bg.addColorStop(.55,"#07051A");bg.addColorStop(1,"#1A0630");c.fillStyle=bg;c.fillRect(0,0,W2,H2);
+  var seed=7;function rnd(){seed=(seed*16807)%2147483647;return seed/2147483647}
+  for(var i=0;i<260;i++){c.globalAlpha=.2+rnd()*.8;c.fillStyle=rnd()<.15?"#B57BFF":"#EDEAFF";var sz=rnd()*2.6+.4;c.fillRect(rnd()*W2,rnd()*H2,sz,sz)}c.globalAlpha=1;
+  c.strokeStyle="rgba(61,240,255,.12)";c.lineWidth=2;for(var y=900;y<H2;y+=38){c.beginPath();c.moveTo(0,y+(y-900)*.4);c.lineTo(W2,y+(y-900)*.4);c.stroke()}
+  for(var x=-600;x<=W2+600;x+=90){c.beginPath();c.moveTo(W2/2+(x-W2/2)*.15,900);c.lineTo(x,H2);c.stroke()}
+  var neb=c.createRadialGradient(W2/2,560,40,W2/2,560,520);neb.addColorStop(0,"rgba(255,92,240,.30)");neb.addColorStop(.5,"rgba(91,60,255,.12)");neb.addColorStop(1,"rgba(0,0,0,0)");c.fillStyle=neb;c.fillRect(0,0,W2,H2);
+  c.textAlign="center";c.textBaseline="alphabetic";
+  c.font="700 130px 'Chakra Petch',sans-serif";c.shadowColor="#3DF0FF";c.shadowBlur=40;c.fillStyle="#3DF0FF";c.fillText("GOSPACE",W2/2,190);c.shadowBlur=0;
+  c.font="600 34px 'Chakra Petch',sans-serif";c.fillStyle="#C9C6E8";c.fillText("by GoPlay Arena",W2/2,245);
+  c.save();c.translate(W2/2,520);c.shadowColor=(g&&g.skin||curShip()).col;c.shadowBlur=60;drawShipShape(c,(g&&g.skin)||curShip(),95,1);c.restore();
+  c.save();c.globalAlpha=.55;var fl=c.createLinearGradient(0,620,0,760);fl.addColorStop(0,"#FF8A3D");fl.addColorStop(1,"rgba(255,92,240,0)");c.fillStyle=fl;c.beginPath();c.moveTo(W2/2-40,610);c.lineTo(W2/2+40,610);c.lineTo(W2/2,770);c.closePath();c.fill();c.restore();
+  var nm=(($("iName")&&$("iName").value)||"").trim().toUpperCase();
+  c.font="700 46px 'Chakra Petch',sans-serif";c.fillStyle="#FF5CF0";c.fillText(nm?nm+" A FAIT":"J'AI FAIT",W2/2,850);
+  c.font="700 190px 'Chakra Petch',sans-serif";c.fillStyle="#FFFFFF";c.shadowColor="#FF5CF0";c.shadowBlur=50;c.fillText(fmt(r.score),W2/2,1020);c.shadowBlur=0;
+  c.font="600 44px 'Chakra Petch',sans-serif";c.fillStyle="#EDEAFF";c.fillText("POINTS · VAGUE "+r.wave+" · "+fmt(r.kills||0)+" ENNEMIS",W2/2,1090);
+  if(shareRank){var t=shareRank===1?"1ER DU JOUR":shareRank+"E DU JOUR";c.font="700 40px 'Chakra Petch',sans-serif";var tw=c.measureText(t).width+60;c.fillStyle="#FFC22E";c.beginPath();if(c.roundRect)c.roundRect(W2/2-tw/2,1120,tw,62,31);else c.rect(W2/2-tw/2,1120,tw,62);c.fill();c.fillStyle="#1A0E00";c.fillText(t,W2/2,1165)}
+  c.font="700 52px 'Chakra Petch',sans-serif";c.fillStyle="#3DF0FF";c.fillText("VIENS ME BATTRE !",W2/2,1250);
+  c.font="500 34px 'Chakra Petch',sans-serif";c.fillStyle="#C9C6E8";c.fillText("goplayarena.re/jeu/pilot",W2/2,1300);
+  return cv;
+}
+function shareScore(){
+  var btn=$("bShare"),old=btn.textContent;btn.textContent="Préparation…";
+  var cv=shareImage(),txt="J'ai fait "+fmt((lastResult||{}).score||0)+" points à GoSpace chez GoPlay Arena ! Viens me battre : https://www.goplayarena.re/jeu/pilot/";
+  var done=function(){btn.textContent=old};
+  cv.toBlob(function(bl){
+    if(!bl){done();return}
+    var f;try{f=new File([bl],"gospace-score.png",{type:"image/png"})}catch(e){}
+    if(f&&navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],text:txt}).catch(function(){}).then(done);return}
+    var u=URL.createObjectURL(bl),a=document.createElement("a");a.href=u;a.download="gospace-score.png";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);
+    btn.textContent="Image enregistrée";setTimeout(done,2000);
+  },"image/png");
 }
 /* ---------- Écrans ---------- */
 function show(id){["scrStart","scrBoard","scrOver","scrPause","scrSet","scrQuit","scrUp","scrShip","scrBadges"].forEach(function(s){$(s).hidden=s!==id});$("hud").hidden=id!==null}
@@ -1310,8 +1461,8 @@ function best(){return parseInt(store("gpapi_best")||"0",10)||0}
 function syncBest(){var b=best();$("sBest").innerHTML=b?"Ton record : <b>"+fmt(b)+"</b>":"Le classement t'attend"}
 function start(){
   audio();myId=null;goFull();
-  var go=function(){var n=bumpStreak();newGame();g.skin=curShip();g.count=3;g.voice=true;robo("three");g.cPop=.25;$("combo").textContent="";show(null);musStart();
-    if(n>=2){g.pw.bubble=true;if(n>=4)g.sup=n>=7?1:.5;g.banner={txt:"SÉRIE "+n+" JOURS",sub:streakBonus(n),t:2.4}}};
+  var go=function(){var n=bumpStreak();DF=defiToday();newGame();if(DF.lives)g.lives=DF.lives;g.defiNew=false;g.skin=curShip();g.count=3;g.voice=true;robo("three");g.cPop=.25;$("combo").textContent="";show(null);musStart();
+    if(n>=2){g.pw.bubble=true;if(n>=4&&!DF.nosup)g.sup=n>=7?1:.5;g.banner={txt:"SÉRIE "+n+" JOURS",sub:streakBonus(n),t:2.4}}};
   go();
 }
 var saved=false,lastResult=null;
@@ -1337,7 +1488,7 @@ function gameOver(){
   unlocked=SHIPS.filter(function(sh){return sh.ok(pr)&&before.indexOf(sh.k)<0}).map(function(sh){return sh.n});
   var rec=Math.round(g.score)>best();g.score=Math.round(g.score);if(rec)store("gpapi_best",String(g.score));
   lastResult={score:g.score,wave:g.wave,dur:Math.round(g.t),kills:g.kills};
-  saved=false;
+  saved=false;shareRank=0;
   setTimeout(function(){
     countUp($("oScore"),g.score);
     $("oMeta").textContent="";
@@ -1361,7 +1512,7 @@ $("fName").addEventListener("submit",function(e){
   if(n.length<2){$("oErr").textContent="Écris au moins 2 lettres.";return}
   store("gpaj_name",n);$("bSave").disabled=true;$("bSave").textContent="Envoi…";$("iName").blur();
   submitScore({name:n,score:lastResult.score,wave:lastResult.wave,dur:lastResult.dur,kills:lastResult.kills}).then(function(j){
-    saved=true;myId=j.id;if(j.rank_day===1&&API){unlockBadge("top1");syncBadgeBtn()}$("bSave").textContent=j.rank_day?(j.rank_day+(j.rank_day===1?"er":"e")+" du jour"):"Enregistré";$("iName").disabled=true;
+    saved=true;myId=j.id;shareRank=j.rank_day||0;if(j.rank_day===1&&API){unlockBadge("top1");syncBadgeBtn()}$("bSave").textContent=j.rank_day?(j.rank_day+(j.rank_day===1?"er":"e")+" du jour"):"Enregistré";$("iName").disabled=true;
     boardPeriod="day";renderBoard($("boardB"));
   }).catch(function(err){$("bSave").disabled=false;$("bSave").textContent="Enregistrer";$("oErr").textContent=(err&&err.message)||"Envoi impossible. Réessaie."});
 });
@@ -1398,7 +1549,8 @@ $("hQuit").onclick=function(){if(g&&g.run){if(!g.paused){g.paused=true;musStop()
 $("bQuitNo").onclick=function(){audio();resume()};
 $("bQuitYes").onclick=function(){if(g){g.run=false;g.paused=false}musStop();joy.on=false;joy.dx=joy.dy=0;fb.on=false;g=null;$("combo").textContent="";syncBest();show("scrStart")};
 document.addEventListener("visibilitychange",function(){if(document.hidden)pause()});
-$("bOverMenu").onclick=function(){syncBest();syncStreak();syncShipBtn();syncBadgeBtn();show("scrStart")};
+$("bShare").onclick=function(){SFX.pick&&SFX.pick();shareScore()};
+$("bOverMenu").onclick=function(){syncDefi();syncBest();syncStreak();syncShipBtn();syncBadgeBtn();show("scrStart")};
 $("bShip").onclick=function(){audio();renderHangar();show("scrShip")};
 $("bBadges").onclick=function(){audio();renderBadges();show("scrBadges")};
 $("bBadgesBack").onclick=function(){syncBadgeBtn();show("scrStart")};
@@ -1407,6 +1559,6 @@ $("bShipBack").onclick=function(){syncShipBtn();show("scrStart")};
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("button");if(!b||b.closest("canvas"))return;audio();roboLoad();SFX.click()},true);
 $("fsTipX").onclick=function(e){e.stopPropagation();store("gpapi_fstip","0");syncFsTip()};
 document.addEventListener("fullscreenchange",function(){setTimeout(resize,120)});document.addEventListener("webkitfullscreenchange",function(){setTimeout(resize,120)});
-syncFsTip();syncBadgeBtn();syncStreak();syncShipBtn();syncBest();show("scrStart");
+syncFsTip();syncDefi();syncBadgeBtn();syncStreak();syncShipBtn();syncBest();show("scrStart");
 })();
 </script>
