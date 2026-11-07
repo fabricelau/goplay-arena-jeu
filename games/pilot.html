@@ -1290,57 +1290,57 @@ function syncFsTip(){var t=$("fsTip");if(!t)return;var off=false;try{off=store("
 var TIER={b:{n:"Bronze",c:"#E0915A"},a:{n:"Argent",c:"#D9D4FF"},o:{n:"Or",c:"#FFC22E"},n:{n:"Néon",c:"#FF5CF0"}};
 /* v(P) renvoie [valeur, objectif] ; P mélange les totaux enregistrés et la partie en cours */
 var BADGES=[
- {id:"first",ic:"cross",n:"Premier sang",d:"Détruire ton premier ennemi",t:"b",gl:"1",v:function(P){return [P.kills,1]}},
- {id:"k500",ic:"cross",n:"Chasseur",d:"500 ennemis détruits au total",t:"a",gl:"500",v:function(P){return [P.kills,500]}},
- {id:"k2500",ic:"skull",n:"Exterminateur",d:"2 500 ennemis détruits au total",t:"o",gl:"2,5k",v:function(P){return [P.kills,2500]}},
- {id:"k10000",ic:"skull",n:"Légende du vide",d:"10 000 ennemis détruits au total",t:"n",gl:"10k",v:function(P){return [P.kills,10000]}},
- {id:"w5",ic:"planet",n:"Pilote",d:"Atteindre la vague 5",t:"b",gl:"V5",v:function(P){return [P.wave,5]}},
- {id:"w10",ic:"planet",n:"As du cosmos",d:"Atteindre la vague 10",t:"a",gl:"V10",v:function(P){return [P.wave,10]}},
- {id:"w15",ic:"planet",n:"Commandant",d:"Atteindre la vague 15",t:"o",gl:"V15",v:function(P){return [P.wave,15]}},
- {id:"w20",ic:"planet",n:"Immortel",d:"Atteindre la vague 20",t:"n",gl:"V20",v:function(P){return [P.wave,20]}},
- {id:"c10",ic:"bolt",n:"Enchaîneur",d:"Faire un combo ×10",t:"b",gl:"×10",v:function(P){return [P.kc,10]}},
- {id:"c25",ic:"bolt",n:"Furie",d:"Faire un combo ×25",t:"a",gl:"×25",v:function(P){return [P.kc,25]}},
- {id:"c40",ic:"bolt",n:"Tempête",d:"Faire un combo ×40",t:"o",gl:"×40",v:function(P){return [P.kc,40]}},
- {id:"s10k",ic:"star",n:"10 000",d:"10 000 points en une partie",t:"b",gl:"10k",v:function(P){return [P.score,10000]}},
- {id:"s50k",ic:"star",n:"50 000",d:"50 000 points en une partie",t:"a",gl:"50k",v:function(P){return [P.score,50000]}},
- {id:"s150k",ic:"star",n:"150 000",d:"150 000 points en une partie",t:"o",gl:"150k",v:function(P){return [P.score,150000]}},
- {id:"spiral",ic:"spiral",n:"Spirale brisée",d:"Vaincre La Spirale",t:"a",gl:"",v:function(P){return [P.bk.spiral?1:0,1]}},
- {id:"beam",ic:"beam",n:"Phare éteint",d:"Vaincre Le Phare",t:"a",gl:"",v:function(P){return [P.bk.beam?1:0,1]}},
- {id:"hive",ic:"hive",n:"Ruche détruite",d:"Vaincre La Ruche",t:"a",gl:"",v:function(P){return [P.bk.hive?1:0,1]}},
- {id:"crown",ic:"crown",n:"Triple couronne",d:"Vaincre les 3 boss",t:"o",gl:"III",v:function(P){return [(P.bk.spiral?1:0)+(P.bk.beam?1:0)+(P.bk.hive?1:0),3]}},
- {id:"clean",ic:"shield",n:"Intouchable",d:"Finir une vague sans perdre de bouclier",t:"b",gl:"1",v:function(P){return [P.clean,1]}},
- {id:"flawless",ic:"shield",n:"Sans une égratignure",d:"Finir 5 vagues d'affilée sans être touché",t:"o",gl:"5",v:function(P){return [P.flawless,5]}},
- {id:"graze",ic:"comet",n:"Frôleur",d:"30 frôlés en une partie",t:"a",gl:"30",v:function(P){return [P.near,30]}},
- {id:"dash",ic:"dash",n:"Danseur",d:"15 dash en une partie",t:"b",gl:"15",v:function(P){return [P.dashes,15]}},
- {id:"supers",ic:"wave",n:"Onde de choc",d:"5 super-attaques en une partie",t:"a",gl:"5",v:function(P){return [P.supers,5]}},
- {id:"collect",ic:"gem",n:"Collectionneur",d:"Ramasser les 6 superpouvoirs en une partie",t:"o",gl:"6",v:function(P){return [P.pwk,6]}},
- {id:"rocks",ic:"rock",n:"Démolisseur",d:"50 astéroïdes détruits au total",t:"a",gl:"50",v:function(P){return [P.rocks,50]}},
- {id:"g10",ic:"pad",n:"Habitué",d:"Jouer 10 parties",t:"b",gl:"10",v:function(P){return [P.games,10]}},
- {id:"g50",ic:"pad",n:"Pilote assidu",d:"Jouer 50 parties",t:"a",gl:"50",v:function(P){return [P.games,50]}},
- {id:"st3",ic:"flame",n:"Fidèle",d:"Jouer 3 jours de suite",t:"b",gl:"3j",v:function(P){return [P.streak,3]}},
- {id:"st7",ic:"flame",n:"Inarrêtable",d:"Jouer 7 jours de suite",t:"o",gl:"7j",v:function(P){return [P.streak,7]}},
- {id:"k100",ic:"cross",n:"Tireur",d:"100 ennemis détruits au total",t:"b",gl:"100",v:function(P){return [P.kills,100]}},
- {id:"k25000",ic:"skull",n:"Fléau galactique",d:"25 000 ennemis détruits au total",t:"n",gl:"25k",v:function(P){return [P.kills,25000]}},
- {id:"k5000",ic:"skull",n:"Faucheur",d:"5 000 ennemis détruits au total",t:"o",gl:"5k",v:function(P){return [P.kills,5000]}},
- {id:"w3",ic:"planet",n:"Décollage",d:"Atteindre la vague 3",t:"b",gl:"V3",v:function(P){return [P.wave,3]}},
- {id:"w25",ic:"planet",n:"Au-delà des étoiles",d:"Atteindre la vague 25",t:"n",gl:"V25",v:function(P){return [P.wave,25]}},
- {id:"c60",ic:"bolt",n:"Ouragan",d:"Faire un combo ×60",t:"n",gl:"×60",v:function(P){return [P.kc,60]}},
- {id:"s25k",ic:"star",n:"25 000",d:"25 000 points en une partie",t:"b",gl:"25k",v:function(P){return [P.score,25000]}},
- {id:"s300k",ic:"star",n:"300 000",d:"300 000 points en une partie",t:"n",gl:"300k",v:function(P){return [P.score,300000]}},
- {id:"boss1",ic:"crown",n:"Tueur de géant",d:"Vaincre ton premier boss",t:"b",gl:"1",v:function(P){return [P.boss,1]}},
- {id:"boss10",ic:"crown",n:"Chasseur de boss",d:"Vaincre 10 boss au total",t:"o",gl:"10",v:function(P){return [P.boss,10]}},
- {id:"graze60",ic:"comet",n:"Funambule",d:"60 frôlés en une partie",t:"o",gl:"60",v:function(P){return [P.near,60]}},
- {id:"dash40",ic:"dash",n:"Éclair vivant",d:"40 dash en une partie",t:"o",gl:"40",v:function(P){return [P.dashes,40]}},
- {id:"supers12",ic:"wave",n:"Big bang",d:"12 super-attaques en une partie",t:"o",gl:"12",v:function(P){return [P.supers,12]}},
- {id:"rocks200",ic:"rock",n:"Briseur de mondes",d:"200 astéroïdes détruits au total",t:"o",gl:"200",v:function(P){return [P.rocks,200]}},
- {id:"g100",ic:"pad",n:"Vétéran",d:"Jouer 100 parties",t:"o",gl:"100",v:function(P){return [P.games,100]}},
- {id:"g250",ic:"pad",n:"Pilier de l'arène",d:"Jouer 250 parties",t:"n",gl:"250",v:function(P){return [P.games,250]}},
- {id:"st14",ic:"flame",n:"Flamme éternelle",d:"Jouer 14 jours de suite",t:"n",gl:"14j",v:function(P){return [P.streak,14]}},
+ {id:"first",ic:"cross",n:"Premier sang",d:"100 ennemis détruits au total",t:"b",gl:"100",v:function(P){return [P.kills,100]}},
+ {id:"k500",ic:"cross",n:"Chasseur",d:"5 000 ennemis détruits au total",t:"a",gl:"5k",v:function(P){return [P.kills,5000]}},
+ {id:"k2500",ic:"skull",n:"Exterminateur",d:"25 000 ennemis détruits au total",t:"o",gl:"25k",v:function(P){return [P.kills,25000]}},
+ {id:"k10000",ic:"skull",n:"Légende du vide",d:"100 000 ennemis détruits au total",t:"n",gl:"100k",v:function(P){return [P.kills,100000]}},
+ {id:"w5",ic:"planet",n:"Pilote",d:"Atteindre la vague 15",t:"b",gl:"V15",v:function(P){return [P.wave,15]}},
+ {id:"w10",ic:"planet",n:"As du cosmos",d:"Atteindre la vague 20",t:"a",gl:"V20",v:function(P){return [P.wave,20]}},
+ {id:"w15",ic:"planet",n:"Commandant",d:"Atteindre la vague 25",t:"o",gl:"V25",v:function(P){return [P.wave,25]}},
+ {id:"w20",ic:"planet",n:"Immortel",d:"Atteindre la vague 30",t:"n",gl:"V30",v:function(P){return [P.wave,30]}},
+ {id:"c10",ic:"bolt",n:"Enchaîneur",d:"Faire un combo ×30",t:"b",gl:"×30",v:function(P){return [P.kc,30]}},
+ {id:"c25",ic:"bolt",n:"Furie",d:"Faire un combo ×50",t:"a",gl:"×50",v:function(P){return [P.kc,50]}},
+ {id:"c40",ic:"bolt",n:"Tempête",d:"Faire un combo ×80",t:"o",gl:"×80",v:function(P){return [P.kc,80]}},
+ {id:"s10k",ic:"star",n:"Six chiffres",d:"100 000 points en une partie",t:"b",gl:"100k",v:function(P){return [P.score,100000]}},
+ {id:"s50k",ic:"star",n:"Demi-million",d:"500 000 points en une partie",t:"a",gl:"500k",v:function(P){return [P.score,500000]}},
+ {id:"s150k",ic:"star",n:"Millionnaire",d:"1 500 000 points en une partie",t:"o",gl:"1,5M",v:function(P){return [P.score,1500000]}},
+ {id:"spiral",ic:"spiral",n:"Spirale brisée",d:"Vaincre La Spirale 10 fois",t:"a",gl:"10",v:function(P){return [P.bk.spiral,10]}},
+ {id:"beam",ic:"beam",n:"Phare éteint",d:"Éteindre Le Phare 10 fois",t:"a",gl:"10",v:function(P){return [P.bk.beam,10]}},
+ {id:"hive",ic:"hive",n:"Ruche détruite",d:"Détruire La Ruche 10 fois",t:"a",gl:"10",v:function(P){return [P.bk.hive,10]}},
+ {id:"crown",ic:"crown",n:"Triple couronne",d:"Vaincre chacun des 3 boss 25 fois",t:"o",gl:"25",v:function(P){return [Math.min(P.bk.spiral,P.bk.beam,P.bk.hive),25]}},
+ {id:"clean",ic:"shield",n:"Intouchable",d:"10 vagues sans perdre de bouclier en une partie",t:"b",gl:"10",v:function(P){return [P.clean,10]}},
+ {id:"flawless",ic:"shield",n:"Sans une égratignure",d:"15 vagues d'affilée sans être touché",t:"o",gl:"15",v:function(P){return [P.flawless,15]}},
+ {id:"graze",ic:"comet",n:"Frôleur",d:"300 frôlés en une partie",t:"a",gl:"300",v:function(P){return [P.near,300]}},
+ {id:"dash",ic:"dash",n:"Danseur",d:"150 dash en une partie",t:"b",gl:"150",v:function(P){return [P.dashes,150]}},
+ {id:"supers",ic:"wave",n:"Onde de choc",d:"25 super-attaques en une partie",t:"a",gl:"25",v:function(P){return [P.supers,25]}},
+ {id:"collect",ic:"gem",n:"Collectionneur",d:"Ramasser 50 superpouvoirs en une partie",t:"o",gl:"50",v:function(P){return [P.pw,50]}},
+ {id:"rocks",ic:"rock",n:"Démolisseur",d:"500 astéroïdes détruits au total",t:"a",gl:"500",v:function(P){return [P.rocks,500]}},
+ {id:"g10",ic:"pad",n:"Habitué",d:"Jouer 100 parties",t:"b",gl:"100",v:function(P){return [P.games,100]}},
+ {id:"g50",ic:"pad",n:"Pilote assidu",d:"Jouer 500 parties",t:"a",gl:"500",v:function(P){return [P.games,500]}},
+ {id:"st3",ic:"flame",n:"Fidèle",d:"Jouer 10 jours de suite",t:"b",gl:"10j",v:function(P){return [P.streak,10]}},
+ {id:"st7",ic:"flame",n:"Inarrêtable",d:"Jouer 30 jours de suite",t:"o",gl:"30j",v:function(P){return [P.streak,30]}},
+ {id:"k100",ic:"cross",n:"Tireur",d:"1 000 ennemis détruits au total",t:"b",gl:"1k",v:function(P){return [P.kills,1000]}},
+ {id:"k25000",ic:"skull",n:"Fléau galactique",d:"250 000 ennemis détruits au total",t:"n",gl:"250k",v:function(P){return [P.kills,250000]}},
+ {id:"k5000",ic:"skull",n:"Faucheur",d:"50 000 ennemis détruits au total",t:"o",gl:"50k",v:function(P){return [P.kills,50000]}},
+ {id:"w3",ic:"planet",n:"Décollage",d:"Atteindre la vague 10",t:"b",gl:"V10",v:function(P){return [P.wave,10]}},
+ {id:"w25",ic:"planet",n:"Au-delà des étoiles",d:"Atteindre la vague 40",t:"n",gl:"V40",v:function(P){return [P.wave,40]}},
+ {id:"c60",ic:"bolt",n:"Ouragan",d:"Faire un combo ×120",t:"n",gl:"×120",v:function(P){return [P.kc,120]}},
+ {id:"s25k",ic:"star",n:"Quart de million",d:"250 000 points en une partie",t:"b",gl:"250k",v:function(P){return [P.score,250000]}},
+ {id:"s300k",ic:"star",n:"Triple million",d:"3 000 000 points en une partie",t:"n",gl:"3M",v:function(P){return [P.score,3000000]}},
+ {id:"boss1",ic:"crown",n:"Tueur de géant",d:"Vaincre 10 boss au total",t:"b",gl:"10",v:function(P){return [P.boss,10]}},
+ {id:"boss10",ic:"crown",n:"Chasseur de boss",d:"Vaincre 100 boss au total",t:"o",gl:"100",v:function(P){return [P.boss,100]}},
+ {id:"graze60",ic:"comet",n:"Funambule",d:"600 frôlés en une partie",t:"o",gl:"600",v:function(P){return [P.near,600]}},
+ {id:"dash40",ic:"dash",n:"Éclair vivant",d:"400 dash en une partie",t:"o",gl:"400",v:function(P){return [P.dashes,400]}},
+ {id:"supers12",ic:"wave",n:"Big bang",d:"60 super-attaques en une partie",t:"o",gl:"60",v:function(P){return [P.supers,60]}},
+ {id:"rocks200",ic:"rock",n:"Briseur de mondes",d:"2 000 astéroïdes détruits au total",t:"o",gl:"2k",v:function(P){return [P.rocks,2000]}},
+ {id:"g100",ic:"pad",n:"Vétéran",d:"Jouer 1 000 parties",t:"o",gl:"1k",v:function(P){return [P.games,1000]}},
+ {id:"g250",ic:"pad",n:"Pilier de l'arène",d:"Jouer 2 500 parties",t:"n",gl:"2,5k",v:function(P){return [P.games,2500]}},
+ {id:"st14",ic:"flame",n:"Flamme éternelle",d:"Jouer 60 jours de suite",t:"n",gl:"60j",v:function(P){return [P.streak,60]}},
  {id:"ship10",ic:"ship",n:"Flotte",d:"Débloquer 10 vaisseaux",t:"a",gl:"10",v:function(P){return [P.ships,10]}},
  {id:"ship20",ic:"ship",n:"Armada",d:"Débloquer 20 vaisseaux",t:"o",gl:"20",v:function(P){return [P.ships,20]}},
- {id:"def1",ic:"target2",n:"Défi relevé",d:"Réussir un défi du jour",t:"b",gl:"1",v:function(P){return [P.defi,1]}},
- {id:"def7",ic:"target2",n:"Maître des défis",d:"Réussir 7 défis du jour",t:"o",gl:"7",v:function(P){return [P.defi,7]}},
- {id:"def30",ic:"target2",n:"Défi permanent",d:"Réussir 30 défis du jour",t:"n",gl:"30",v:function(P){return [P.defi,30]}},
+ {id:"def1",ic:"target2",n:"Défi relevé",d:"Réussir 5 défis du jour",t:"b",gl:"5",v:function(P){return [P.defi,5]}},
+ {id:"def7",ic:"target2",n:"Maître des défis",d:"Réussir 30 défis du jour",t:"o",gl:"30",v:function(P){return [P.defi,30]}},
+ {id:"def30",ic:"target2",n:"Défi permanent",d:"Réussir 100 défis du jour",t:"n",gl:"100",v:function(P){return [P.defi,100]}},
  {id:"trails",ic:"comet",n:"Styliste",d:"Débloquer toutes les traînées",t:"n",gl:"11",v:function(P){return [P.trails,TRAILS.length]}},
  {id:"ships",ic:"ship",n:"Hangar complet",d:"Débloquer tous les vaisseaux",t:"n",gl:"25",v:function(P){return [P.ships,SHIPS.length]}},
  {id:"top1",ic:"trophy",n:"N°1 du jour",d:"Finir premier du classement du jour",t:"n",gl:"N°1",v:function(P){return [P.top1?1:0,1]}}
@@ -1410,14 +1410,19 @@ function medalCanvas(b,ok,px){
   }catch(e){}
   MEDAL_CACHE[key]=cv;return cv;
 }
+function badgesMigrate(){
+  if(store("gpapi_badges_v")==="2")return;var o={};try{o=JSON.parse(store("gpapi_badges")||"{}")||{}}catch(e){}
+  var P=badgeStats(false),keep={};BADGES.forEach(function(b){if(!o[b.id])return;if(b.id==="top1"){keep[b.id]=o[b.id];return}var r=b.v(P);if(r[0]>=r[1])keep[b.id]=o[b.id]});
+  store("gpapi_badges",JSON.stringify(keep));store("gpapi_badges_v","2");
+}
 function badgesGot(){var o={};try{o=JSON.parse(store("gpapi_badges")||"{}")||{}}catch(e){}return o}
 function badgeStats(live){
   var p=prog(),cur=live&&g?g:null,got=badgesGot();
   var add=function(k){return cur&&!cur.saved?cur[k]:0};
   return {kills:p.kills+add("kills"),wave:Math.max(p.bestWave,cur?cur.wave:0),kc:Math.max(p.maxKc,cur?cur.bestKc:0),score:Math.max(p.maxScore,cur?Math.round(cur.score):0),
-    bk:Object.assign({},p.bossKinds,cur?cur.bossKinds:{}),clean:(cur&&cur.cleanWaves)||got.clean?1:0,
-    flawless:cur&&!cur.everHit?cur.cleanWaves:(got.flawless?5:0),
-    near:cur?cur.near:0,dashes:cur?cur.dashes:0,supers:cur?cur.supers:0,pwk:cur?Object.keys(cur.pwKinds).length:0,rocks:p.rocks+add("rocksK"),
+    bk:(function(){var o={};["spiral","beam","hive"].forEach(function(k){o[k]=(+p.bossKinds[k]||0)+(cur&&!cur.saved&&cur.bossKinds[k]?1:0)});return o})(),clean:cur?cur.cleanWaves:0,
+    flawless:cur&&!cur.everHit?cur.cleanWaves:0,
+    near:cur?cur.near:0,dashes:cur?cur.dashes:0,supers:cur?cur.supers:0,pw:cur?cur.powers:0,rocks:p.rocks+add("rocksK"),
     defi:defiCount(),trails:TRAILS.filter(function(T){return T.ok(p)}).length,boss:p.boss+(cur&&!cur.saved?cur.bossKills:0),games:p.games,streak:Math.max(p.bestStreak,streak()),ships:SHIPS.filter(function(sh){return sh.ok(p)}).length,top1:got.top1};
 }
 function unlockBadge(id){
@@ -1560,7 +1565,7 @@ var unlocked=[];
 function gameOver(){
   g.run=false;musStop();SFX.over();
   var pr=prog(),before=SHIPS.filter(function(sh){return sh.ok(pr)}).map(function(sh){return sh.k});
-  pr.bestWave=Math.max(pr.bestWave,g.wave);pr.boss+=g.bossKills;pr.kills+=g.kills;pr.games++;pr.rocks+=g.rocksK;pr.maxScore=Math.max(pr.maxScore,Math.round(g.score));pr.maxKc=Math.max(pr.maxKc,g.bestKc);for(var bk3 in g.bossKinds)pr.bossKinds[bk3]=1;saveProg(pr);
+  pr.bestWave=Math.max(pr.bestWave,g.wave);pr.boss+=g.bossKills;pr.kills+=g.kills;pr.games++;pr.rocks+=g.rocksK;pr.maxScore=Math.max(pr.maxScore,Math.round(g.score));pr.maxKc=Math.max(pr.maxKc,g.bestKc);for(var bk3 in g.bossKinds)pr.bossKinds[bk3]=(+pr.bossKinds[bk3]||0)+1;saveProg(pr);
   g.saved=true;badgeCheck(true);
   unlocked=SHIPS.filter(function(sh){return sh.ok(pr)&&before.indexOf(sh.k)<0}).map(function(sh){return sh.n});
   var rec=Math.round(g.score)>best();g.score=Math.round(g.score);if(rec)store("gpapi_best",String(g.score));
@@ -1636,6 +1641,6 @@ $("bShipBack").onclick=function(){syncShipBtn();show("scrStart")};
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("button");if(!b||b.closest("canvas"))return;audio();roboLoad();SFX.click()},true);
 $("fsTipX").onclick=function(e){e.stopPropagation();store("gpapi_fstip","0");syncFsTip()};
 document.addEventListener("fullscreenchange",function(){setTimeout(resize,120)});document.addEventListener("webkitfullscreenchange",function(){setTimeout(resize,120)});
-syncFsTip();syncDefi();syncBadgeBtn();syncStreak();syncShipBtn();syncBest();show("scrStart");
+try{badgesMigrate()}catch(e){}syncFsTip();syncDefi();syncBadgeBtn();syncStreak();syncShipBtn();syncBest();show("scrStart");
 })();
 </script>
