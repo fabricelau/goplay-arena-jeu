@@ -668,14 +668,20 @@ function angDiff(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b))}
 function autoFire(dt){
   var range=Math.max(W,H);
   /* le nez du vaisseau suit la direction où l'on penche (ou glisse le doigt) */
+  aimHeading(dt);
+  g.fireT-=dt*(DF.fire?1/DF.fire:1);
+  var manual=SET.fire==="manual",holding=manual&&(fb.on||keys[" "]);
+  autoFireRest(dt,range,manual,holding);
+}
+function aimHeading(dt){
   var sp0=Math.hypot(g.vx,g.vy);
   /* le nez vise directement où pointe le joystick (pas besoin d'attendre que le vaisseau freine) ;
      plus l'écart est grand, plus il pivote vite : un demi-tour prend environ 0,15 s */
   var jl=Math.hypot(joy.dx,joy.dy),want=null;
   if(jl>.18)want=Math.atan2(joy.dy,joy.dx);else if(sp0>25*S)want=Math.atan2(g.vy,g.vx);
   if(want!==null){var d0=angDiff(want,g.heading),turn=(2+11*SET.turn/100)*(1+1.8*Math.abs(d0)/Math.PI)*dt;g.heading+=Math.max(-turn,Math.min(turn,d0))}
-  g.fireT-=dt*(DF.fire?1/DF.fire:1);
-  var manual=SET.fire==="manual",holding=manual&&(fb.on||keys[" "]);
+}
+function autoFireRest(dt,range,manual,holding){
   /* jauge : se recharge quand on ne tire pas */
   if(manual){if(holding)fb.rest=0;else{fb.rest+=dt;if(fb.rest>.3)fb.energy=Math.min(1,fb.energy+dt*.45*g.up.cool)}}
   if(g.fireT<=0){
@@ -1153,7 +1159,7 @@ function loop(now){
     if(av>.0195||p90>.03){Q.good=0;if(Q.scale>1.25){Q.scale=Math.max(1.25,Q.scale-.25);resize()}else if(Q.lv>0){Q.lv--;resize()}else if(Q.scale>.75){Q.scale=Math.max(.75,Q.scale-.25);resize()}}
     else if(av<.0172&&p90<.022&&Q.lv<2){if(++Q.good>=5){Q.good=0;Q.lv++}}}}
   if(g&&g.run&&!g.paused&&!g.choosing){
-    if(g.count>0){var c0=Math.ceil(g.count);g.count-=dt;control(dt);var c1=Math.ceil(g.count);
+    if(g.count>0){var c0=Math.ceil(g.count);g.count-=dt;control(dt);aimHeading(dt);var c1=Math.ceil(g.count);
       if(g.voice&&c1!==c0&&c1>0){robo(COUNT_KEYS[c1]);g.cPop=.25}
       if(g.count<=0){SFX.go();g.goT=.9;g.cPop=.3;if(g.voice){robo("go");g.voice=false}}}
     else if(g.dying>0){g.dying-=dt;update(dt*.22);if(g.dying<=0&&g.run)gameOver()}
