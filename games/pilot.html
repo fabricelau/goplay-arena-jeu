@@ -90,7 +90,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .card strong{font:700 20px var(--display)}.card span{color:var(--muted);font-size:16px}
 .card:active{transform:scale(.98)}
 .c-spd,.c-rate{border-left-color:#3DF0FF}.c-guns,.c-pierce{border-left-color:#FF5CF0}.c-cap,.c-cool{border-left-color:#FFB020}.c-shield,.c-bubble{border-left-color:#5CFFB0}.c-magnet,.c-supc{border-left-color:#B57BFF}
-.ships{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ships{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;overscroll-behavior:contain}
+.ship strong{font-size:14px}.ship span{font-size:11px;line-height:1.25;text-align:center}
+.board.all ol{position:relative;max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:2px}
 .ship{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 6px;color:var(--text);cursor:pointer;font-family:var(--body)}
 .ship canvas{width:72px;height:72px}.ship strong{font:700 16px var(--display)}.ship span{font-size:13px;color:var(--muted);text-align:center}
 .ship.on{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}.ship.locked{cursor:default;opacity:.75}
@@ -132,14 +134,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
   .namef input{padding:8px 12px;font-size:17px}
   .err{min-height:0;margin:0}
   .board{padding:8px}.board li{padding:3px 6px;font-size:15px}
-  .board li:nth-child(n+6):not(.me){display:none}
+  .board:not(.all) li:nth-child(n+6):not(.me){display:none}
+  .board.all ol{max-height:46vh}
   .tabs{margin-bottom:4px}.tabs button{padding:5px 0}
   .sets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;padding:10px 14px}
   .set{font-size:15px}.set input{height:22px}.seg button{padding:6px 0;font-size:14px}
   .note{display:none}
   .cards{flex-direction:row}.card{flex:1;padding:12px}
   .card strong{font-size:17px}.card span{font-size:14px}
-  .ships{grid-template-columns:repeat(5,minmax(0,1fr))}.ship canvas{width:56px;height:56px}.ship span{font-size:11px}
+  .ships{grid-template-columns:repeat(5,minmax(0,1fr));max-height:56vh}.ship canvas{width:56px;height:56px}.ship span{font-size:11px}
   .pause{font-size:24px}
 }
 @media (orientation:landscape) and (max-height:400px){
@@ -266,7 +269,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 
 <section class="ov" id="scrShip" hidden>
   <div class="box">
-    <div class="eyebrow">Hangar</div>
+    <div class="eyebrow">Hangar · <span id="shipCount"></span></div>
     <div class="ships" id="shipList"></div>
     <p class="how note" style="font-size:15px">Débloque de nouveaux vaisseaux en jouant. Ils restent sur ce téléphone.</p>
     <button class="play" id="bShipBack">OK</button>
@@ -305,15 +308,15 @@ var API=/(^|\.)goplayarena\.re$/.test(location.hostname)?"/wp-json/gpa-jeu/v1/sc
 var GAME="pilot";
 function today(){try{return new Intl.DateTimeFormat("en-CA",{timeZone:"Indian/Reunion",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}catch(e){return new Date().toISOString().slice(0,10)}}
 function localGet(){var o;try{o=JSON.parse(store("gpapi_scores")||"{}")}catch(e){o={}}o.all=o.all||[];if(o.day!==today()){o.day=today();o.today=[]}o.today=o.today||[];return o}
-function localTop(list){return list.slice().sort(function(a,b){return b.score-a.score}).slice(0,10)}
+function localTop(list,n){return list.slice().sort(function(a,b){return b.score-a.score}).slice(0,n||10)}
 function fetchBoard(period){
-  if(API)return fetch(API+"?game="+GAME+"&period="+period,{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){return j.scores||[]});
-  var o=localGet();return Promise.resolve(localTop(period==="day"?o.today:o.all));
+  if(API)return fetch(API+"?game="+GAME+"&period="+period+(period==="all"?"&limit=100":""),{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){return j.scores||[]});
+  var o=localGet();return Promise.resolve((period==="day"?localTop(o.today):localTop(o.all,100)));
 }
 function submitScore(e){
   if(API)return fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({game:GAME},e))}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.message||"Envoi impossible");return j})});
   var o=localGet(),row={id:"l"+Date.now(),name:e.name,score:e.score,wave:e.wave};
-  o.all.push(row);o.today.push(row);o.all=localTop(o.all).concat([]).slice(0,50);o.today=localTop(o.today).slice(0,50);
+  o.all.push(row);o.today.push(row);o.all=localTop(o.all,100);o.today=localTop(o.today).slice(0,50);
   store("gpapi_scores",JSON.stringify(o));
   var rank=o.today.filter(function(r){return r.score>e.score}).length+1;
   return Promise.resolve({id:row.id,rank_day:rank});
@@ -322,7 +325,7 @@ var boardPeriod="day", myId=null;
 function renderBoard(el){
   el.innerHTML='<div class="tabs" role="tablist"><button role="tab" data-p="day" aria-selected="'+(boardPeriod==="day")+'">Aujourd\'hui</button><button role="tab" data-p="all" aria-selected="'+(boardPeriod==="all")+'">Tout temps</button></div><ol><li><span class="empty">Chargement…</span></li></ol>';
   el.querySelectorAll("[data-p]").forEach(function(b){b.onclick=function(){boardPeriod=b.dataset.p;renderBoard(el)}});
-  var ol=el.querySelector("ol"), p=boardPeriod;
+  var ol=el.querySelector("ol"), p=boardPeriod;el.classList.toggle("all",p==="all");
   fetchBoard(p).then(function(rows){
     if(p!==boardPeriod)return;
     ol.textContent="";
@@ -335,6 +338,7 @@ function renderBoard(el){
       var s=document.createElement("span");s.className="pt";s.textContent=fmt(r.score);
       li.append(a,n,w,s);ol.appendChild(li);
     });
+    var mine=ol.querySelector(".me");if(mine&&p==="all")ol.scrollTop=Math.max(0,mine.offsetTop-ol.clientHeight/2);
     if(!API){var nt=document.createElement("div");nt.className="note";nt.textContent="Version d'essai : classement de cet appareil uniquement.";el.appendChild(nt)}
   }).catch(function(){ol.innerHTML='<li><span class="empty" style="grid-column:1/-1">Classement indisponible. Vérifie ta connexion.</span></li>'});
 }
@@ -1143,13 +1147,34 @@ var SHIPS=[
   {k:"viper",n:"Vipère",col:"#3DFF9A",acc:"#FFC22E",cond:"Atteindre la vague 5",ok:function(p){return p.bestWave>=5}},
   {k:"phoenix",n:"Phénix",col:"#FF8A3D",acc:"#FFE03D",cond:"Battre 3 boss au total",ok:function(p){return p.boss>=3}},
   {k:"spectre",n:"Spectre",col:"#B57BFF",acc:"#FF5CF0",cond:"Détruire 1 000 ennemis au total",ok:function(p){return p.kills>=1000}},
-  {k:"gold",n:"Néon Or",col:"#FFC22E",acc:"#FFFFFF",cond:"Atteindre la vague 15",ok:function(p){return p.bestWave>=15}}
+  {k:"gold",n:"Néon Or",col:"#FFC22E",acc:"#FFFFFF",cond:"Atteindre la vague 15",ok:function(p){return p.bestWave>=15}},
+  {k:"rubis",n:"Rubis",shape:"gem",col:"#FF2D55",acc:"#FFB3C1",cond:"Jouer 3 parties",ok:function(p){return p.games>=3}},
+  {k:"saphir",n:"Saphir",shape:"blade",col:"#2F6BFF",acc:"#9EC1FF",cond:"Détruire 100 ennemis au total",ok:function(p){return p.kills>=100}},
+  {k:"emeraude",n:"Émeraude",shape:"trident",col:"#10D47A",acc:"#B6FFD9",cond:"Atteindre la vague 3",ok:function(p){return p.bestWave>=3}},
+  {k:"amethyste",n:"Améthyste",shape:"crescent",col:"#A35CFF",acc:"#E2C6FF",cond:"Détruire 10 astéroïdes au total",ok:function(p){return p.rocks>=10}},
+  {k:"topaze",n:"Topaze",shape:"star",col:"#FFB020",acc:"#FFF1C2",cond:"Faire un combo ×10",ok:function(p){return p.maxKc>=10}},
+  {k:"opale",n:"Opale",shape:"phoenix",col:"#BFF6FF",acc:"#FF9BE8",cond:"10 000 points en une partie",ok:function(p){return p.maxScore>=10000}},
+  {k:"grenat",n:"Grenat",shape:"viper",col:"#C2183B",acc:"#FF8A3D",cond:"Jouer 10 parties",ok:function(p){return p.games>=10}},
+  {k:"peridot",n:"Péridot",shape:"spectre",col:"#B4F03C",acc:"#F5FFB0",cond:"Jouer 2 jours de suite",ok:function(p){return p.bestStreak>=2}},
+  {k:"tanzanite",n:"Tanzanite",shape:"gem",col:"#5A4BFF",acc:"#3DF0FF",cond:"Battre ton premier boss",ok:function(p){return p.boss>=1}},
+  {k:"aigue",n:"Aigue-marine",shape:"crescent",col:"#5EE6E0",acc:"#E0FFFD",cond:"Détruire 500 ennemis au total",ok:function(p){return p.kills>=500}},
+  {k:"citrine",n:"Citrine",shape:"trident",col:"#FFD53D",acc:"#FF7A1A",cond:"Atteindre la vague 8",ok:function(p){return p.bestWave>=8}},
+  {k:"tourmaline",n:"Tourmaline",shape:"blade",col:"#FF4FA3",acc:"#4DFFB0",cond:"Faire un combo ×25",ok:function(p){return p.maxKc>=25}},
+  {k:"jade",n:"Jade",shape:"gold",col:"#2FBF71",acc:"#E8FFE0",cond:"Jouer 25 parties",ok:function(p){return p.games>=25}},
+  {k:"onyx",n:"Onyx",shape:"star",col:"#8A8FA8",acc:"#FF2D55",cond:"50 000 points en une partie",ok:function(p){return p.maxScore>=50000}},
+  {k:"lapis",n:"Lapis-lazuli",shape:"spectre",col:"#2446D8",acc:"#FFC22E",cond:"Vaincre les 3 boss différents",ok:function(p){var b=p.bossKinds||{};return !!(b.spiral&&b.beam&&b.hive)}},
+  {k:"turquoise",n:"Turquoise",shape:"phoenix",col:"#2EE6C8",acc:"#FFFFFF",cond:"Détruire 100 astéroïdes au total",ok:function(p){return p.rocks>=100}},
+  {k:"morganite",n:"Morganite",shape:"crescent",col:"#FF9EC4",acc:"#FFE6F0",cond:"Jouer 5 jours de suite",ok:function(p){return p.bestStreak>=5}},
+  {k:"spinelle",n:"Spinelle",shape:"blade",col:"#FF3D7F",acc:"#B57BFF",cond:"Atteindre la vague 12",ok:function(p){return p.bestWave>=12}},
+  {k:"alexandrite",n:"Alexandrite",shape:"trident",col:"#1FC9A0",acc:"#C64BFF",cond:"Détruire 5 000 ennemis au total",ok:function(p){return p.kills>=5000}},
+  {k:"diamant",n:"Diamant",shape:"gem",col:"#F2FBFF",acc:"#7FE9FF",cond:"Obtenir 25 badges",ok:function(){var o=badgesGot(),n=0;for(var k in o)n++;return n>=25}}
 ];
 function prog(){var o={};try{o=JSON.parse(store("gpapi_prog")||"{}")||{}}catch(e){}return {bestWave:o.bestWave|0,boss:o.boss|0,kills:o.kills|0,games:o.games|0,ship:o.ship||"classic",rocks:o.rocks|0,bossKinds:o.bossKinds||{},maxScore:o.maxScore|0,maxKc:o.maxKc|0,bestStreak:o.bestStreak|0}}
 function saveProg(p){store("gpapi_prog",JSON.stringify(p))}
 function curShip(){var p=prog();for(var i=0;i<SHIPS.length;i++)if(SHIPS[i].k===p.ship&&SHIPS[i].ok(p))return SHIPS[i];return SHIPS[0]}
 function renderHangar(){
   var p=prog(),cur=curShip(),box=$("shipList");box.textContent="";
+  var hc=$("shipCount");if(hc)hc.textContent=SHIPS.filter(function(x){return x.ok(p)}).length+" / "+SHIPS.length;
   SHIPS.forEach(function(sh){var ok=sh.ok(p),b=document.createElement("button");b.type="button";b.className="ship"+(sh.k===cur.k?" on":"")+(ok?"":" locked");
     var c=document.createElement("canvas");c.width=c.height=72;var x=c.getContext("2d");x.translate(36,40);drawShipShape(x,sh,18,ok?1:.25);
     var t=document.createElement("strong");t.textContent=sh.n;var d=document.createElement("span");d.textContent=ok?(sh.k===cur.k?"Sélectionné":"Choisir"):"Verrouillé : "+sh.cond;
@@ -1157,11 +1182,16 @@ function renderHangar(){
 }
 function syncShipBtn(){var b=$("bShip");if(b)b.textContent="Vaisseau : "+curShip().n}
 function drawShipShape(c,sh,r,alpha){
-  c.globalAlpha=alpha;c.beginPath();
-  if(sh.k==="viper"){c.moveTo(0,-r*1.5);c.lineTo(r*.6,r*.6);c.lineTo(r*.25,r*.35);c.lineTo(0,r*.9);c.lineTo(-r*.25,r*.35);c.lineTo(-r*.6,r*.6)}
-  else if(sh.k==="phoenix"){c.moveTo(0,-r*1.1);c.lineTo(r*.4,-r*.1);c.lineTo(r*1.3,r*.5);c.lineTo(r*.4,r*.45);c.lineTo(0,r*.8);c.lineTo(-r*.4,r*.45);c.lineTo(-r*1.3,r*.5);c.lineTo(-r*.4,-r*.1)}
-  else if(sh.k==="spectre"){c.moveTo(0,-r*1.2);c.lineTo(r,r*.2);c.lineTo(r*.5,r*.9);c.lineTo(0,r*.5);c.lineTo(-r*.5,r*.9);c.lineTo(-r,r*.2)}
-  else if(sh.k==="gold"){c.moveTo(0,-r*1.35);c.lineTo(r*.35,-r*.3);c.lineTo(r*1.05,r*.2);c.lineTo(r*.55,r*.85);c.lineTo(0,r*.55);c.lineTo(-r*.55,r*.85);c.lineTo(-r*1.05,r*.2);c.lineTo(-r*.35,-r*.3)}
+  c.globalAlpha=alpha;c.beginPath();var K=sh.shape||sh.k;
+  if(K==="gem"){c.moveTo(0,-r*1.4);c.lineTo(r*.7,-r*.5);c.lineTo(r*.9,r*.3);c.lineTo(r*.35,r*.9);c.lineTo(-r*.35,r*.9);c.lineTo(-r*.9,r*.3);c.lineTo(-r*.7,-r*.5)}
+  else if(K==="blade"){c.moveTo(0,-r*1.6);c.lineTo(r*.3,-r*.2);c.lineTo(r*1.1,r*.9);c.lineTo(r*.2,r*.5);c.lineTo(0,r*.75);c.lineTo(-r*.2,r*.5);c.lineTo(-r*1.1,r*.9);c.lineTo(-r*.3,-r*.2)}
+  else if(K==="trident"){c.moveTo(0,-r*1.4);c.lineTo(r*.25,-r*.3);c.lineTo(r*.75,-r*.95);c.lineTo(r*.9,r*.6);c.lineTo(r*.3,r*.85);c.lineTo(-r*.3,r*.85);c.lineTo(-r*.9,r*.6);c.lineTo(-r*.75,-r*.95);c.lineTo(-r*.25,-r*.3)}
+  else if(K==="crescent"){c.moveTo(0,-r*1.3);c.quadraticCurveTo(r*1.4,-r*.2,r*.9,r*.95);c.quadraticCurveTo(r*.4,r*.3,0,r*.55);c.quadraticCurveTo(-r*.4,r*.3,-r*.9,r*.95);c.quadraticCurveTo(-r*1.4,-r*.2,0,-r*1.3)}
+  else if(K==="star"){for(var si=0;si<10;si++){var sa=-Math.PI/2+si*Math.PI/5,sr=si%2?r*.5:(si===0?r*1.45:r*1.05);si?c.lineTo(Math.cos(sa)*sr,Math.sin(sa)*sr):c.moveTo(Math.cos(sa)*sr,Math.sin(sa)*sr)}}
+  else if(K==="viper"){c.moveTo(0,-r*1.5);c.lineTo(r*.6,r*.6);c.lineTo(r*.25,r*.35);c.lineTo(0,r*.9);c.lineTo(-r*.25,r*.35);c.lineTo(-r*.6,r*.6)}
+  else if(K==="phoenix"){c.moveTo(0,-r*1.1);c.lineTo(r*.4,-r*.1);c.lineTo(r*1.3,r*.5);c.lineTo(r*.4,r*.45);c.lineTo(0,r*.8);c.lineTo(-r*.4,r*.45);c.lineTo(-r*1.3,r*.5);c.lineTo(-r*.4,-r*.1)}
+  else if(K==="spectre"){c.moveTo(0,-r*1.2);c.lineTo(r,r*.2);c.lineTo(r*.5,r*.9);c.lineTo(0,r*.5);c.lineTo(-r*.5,r*.9);c.lineTo(-r,r*.2)}
+  else if(K==="gold"){c.moveTo(0,-r*1.35);c.lineTo(r*.35,-r*.3);c.lineTo(r*1.05,r*.2);c.lineTo(r*.55,r*.85);c.lineTo(0,r*.55);c.lineTo(-r*.55,r*.85);c.lineTo(-r*1.05,r*.2);c.lineTo(-r*.35,-r*.3)}
   else{c.moveTo(0,-r*1.2);c.lineTo(r,r*.8);c.lineTo(r*.35,r*.45);c.lineTo(-r*.35,r*.45);c.lineTo(-r,r*.8)}
   c.closePath();c.fillStyle="#130B38";c.fill();c.strokeStyle=sh.col;c.globalAlpha=alpha*.25;c.lineWidth=8;c.stroke();c.globalAlpha=alpha;c.lineWidth=2.2;c.stroke();
   c.beginPath();c.moveTo(0,-r*.5);c.lineTo(r*.25,r*.15);c.lineTo(-r*.25,r*.15);c.closePath();c.fillStyle=sh.acc;c.fill();c.globalAlpha=1;
@@ -1227,7 +1257,7 @@ var BADGES=[
  {id:"g50",n:"Pilote assidu",d:"Jouer 50 parties",t:"a",gl:"50",v:function(P){return [P.games,50]}},
  {id:"st3",n:"Fidèle",d:"Jouer 3 jours de suite",t:"b",gl:"3j",v:function(P){return [P.streak,3]}},
  {id:"st7",n:"Inarrêtable",d:"Jouer 7 jours de suite",t:"o",gl:"7j",v:function(P){return [P.streak,7]}},
- {id:"ships",n:"Hangar complet",d:"Débloquer tous les vaisseaux",t:"n",gl:"5/5",v:function(P){return [P.ships,SHIPS.length]}},
+ {id:"ships",n:"Hangar complet",d:"Débloquer tous les vaisseaux",t:"n",gl:"25",v:function(P){return [P.ships,SHIPS.length]}},
  {id:"top1",n:"N°1 du jour",d:"Finir premier du classement du jour",t:"n",gl:"N°1",v:function(P){return [P.top1?1:0,1]}}
 ];
 function badgesGot(){var o={};try{o=JSON.parse(store("gpapi_badges")||"{}")||{}}catch(e){}return o}

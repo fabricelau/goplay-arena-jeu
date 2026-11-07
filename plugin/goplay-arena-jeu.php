@@ -2,12 +2,12 @@
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
  * Description: Mini-jeux pour les tables (QR code) : Arena Defender, GoSpace, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.6.1
+ * Version: 1.6.2
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.6.1' );
+define( 'GPAJ_VER', '1.6.2' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
@@ -91,16 +91,16 @@ function gpaj_sort( $l ) {
 	usort( $l, function ( $a, $b ) { return $b['score'] <=> $a['score'] ?: $a['t'] <=> $b['t']; } );
 	return array_slice( $l, 0, GPAJ_KEEP );
 }
-function gpaj_public( $l ) {
+function gpaj_public( $l, $n = 10 ) {
 	return array_map( function ( $r ) {
 		return array( 'id' => $r['id'], 'name' => $r['name'], 'score' => (int) $r['score'], 'wave' => (int) $r['wave'] );
-	}, array_slice( $l, 0, 10 ) );
+	}, array_slice( $l, 0, $n ) );
 }
 
 function gpaj_get( WP_REST_Request $req ) {
 	$game = gpaj_game( $req->get_param( 'game' ) );
 	$key  = $req->get_param( 'period' ) === 'all' ? gpaj_key_all( $game ) : gpaj_key_day( $game );
-	$res = rest_ensure_response( array( 'scores' => gpaj_public( gpaj_list( $key ) ) ) );
+	$res = rest_ensure_response( array( 'scores' => gpaj_public( gpaj_list( $key ), max( 1, min( GPAJ_KEEP, (int) ( $req->get_param( 'limit' ) ?: 10 ) ) ) ) ) );
 	$res->header( 'Cache-Control', 'no-store' );
 	return $res;
 }
