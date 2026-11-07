@@ -2,12 +2,12 @@
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
  * Description: Mini-jeux pour les tables (QR code) : Arena Defender, GoSpace, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.7.0
+ * Version: 1.8.0
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.7.0' );
+define( 'GPAJ_VER', '1.8.0' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
@@ -16,6 +16,8 @@ function gpaj_games() { $g = gpaj_base_games(); foreach ( gpaj_extra() as $k => 
 function gpaj_names() { $x = array(); foreach ( gpaj_extra() as $k => $v ) { $x[ $k ] = $v['name']; } return array_merge( $x, array( 'arena' => 'Arena Defender', 'pilot' => 'GoSpace', 'pixel' => 'Pixel Rush', 'laser' => 'Laser Reflex', 'chain' => 'Target Chain', 'memory' => 'Memory Grid', 'color' => 'Color Switch' ) ); }
 function gpaj_paths() { $x = array(); foreach ( gpaj_extra() as $k => $v ) { $x[ $k ] = '/jeu/' . $k . '/'; } return array_merge( $x, array( 'arena' => '/jeu/', 'pilot' => '/jeu/pilot/', 'pixel' => '/jeu/pixel/', 'laser' => '/jeu/laser/', 'chain' => '/jeu/chain/', 'memory' => '/jeu/memory/', 'color' => '/jeu/color/' ) ); }
 function gpaj_game( $g ) { $g = sanitize_key( (string) $g ); return isset( gpaj_games()[ $g ] ) ? $g : 'arena'; }
+/* Jeux en service : seul GoSpace reste en ligne (les autres sont retirés du site, leurs fichiers et scores restent archivés) */
+function gpaj_active() { return array( 'pilot' ); }
 function gpaj_sfx( $game ) { return $game === 'arena' ? '' : '_' . $game; }
 function gpaj_key_all( $game = 'arena' ) { return 'gpa_jeu_all' . gpaj_sfx( $game ); }
 define( 'GPAJ_KEEP', 100 );
@@ -60,6 +62,9 @@ add_action( 'template_redirect', function () {
 		if ( $path === '' ) { $path = 'jeu/pilot'; }
 		elseif ( preg_match( '#^(icon-(180|192|512)\.png|manifest\.webmanifest)$#', $path ) ) { $path = 'jeu/pilot/' . $path; }
 		elseif ( strpos( $path, 'jeu/' ) !== 0 ) { wp_redirect( 'https://' . GPAJ_GOSPACE_HOST . '/', 302 ); exit; }
+	} elseif ( preg_match( '#^jeu(/([a-z]{3,12}))?$#', $path, $jm ) && ! in_array( $jm[2] ?? 'arena', gpaj_active(), true ) ) {
+		/* jeu retiré : on renvoie vers GoSpace */
+		wp_redirect( gpaj_home_url( 'pilot' ), 302 ); exit;
 	} elseif ( $path === 'jeu/pilot' && gpaj_gospace_live() ) {
 		/* l'ancienne adresse renvoie vers le sous-domaine (les QR déjà imprimés continuent de marcher) */
 		wp_redirect( 'https://' . GPAJ_GOSPACE_HOST . '/', 301 ); exit;
@@ -121,6 +126,7 @@ function gpaj_public( $l, $n = 10 ) {
 }
 
 function gpaj_get( WP_REST_Request $req ) {
+	if ( ! in_array( sanitize_key( (string) $req->get_param( 'game' ) ), gpaj_active(), true ) ) { return new WP_Error( 'gpaj_off', 'Ce jeu n\'est plus en service.', array( 'status' => 410 ) ); }
 	$game = gpaj_game( $req->get_param( 'game' ) );
 	$key  = $req->get_param( 'period' ) === 'all' ? gpaj_key_all( $game ) : gpaj_key_day( $game );
 	$res = rest_ensure_response( array( 'scores' => gpaj_public( gpaj_list( $key ), max( 1, min( GPAJ_KEEP, (int) ( $req->get_param( 'limit' ) ?: 10 ) ) ) ) ) );
@@ -143,6 +149,7 @@ function gpaj_bad_name( $n ) {
 
 function gpaj_post( WP_REST_Request $req ) {
 	$p     = $req->get_json_params();
+	if ( ! in_array( sanitize_key( (string) ( $p['game'] ?? '' ) ), gpaj_active(), true ) ) { return new WP_Error( 'gpaj_off', 'Ce jeu n\'est plus en service.', array( 'status' => 410 ) ); }
 	$name  = trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) ( $p['name'] ?? '' ) ) ) );
 	$name  = mb_substr( $name, 0, 14 );
 	$score = (int) ( $p['score'] ?? 0 );
@@ -331,7 +338,7 @@ function gpaj_admin_table( $title, $list, $reset, $game ) {
 function gpaj_admin() {
 	$names = gpaj_names();
 	$paths = gpaj_paths();
-	$game  = gpaj_game( $_GET['game'] ?? 'arena' );
+	$game  = gpaj_game( $_GET['game'] ?? 'pilot' ); if ( ! in_array( $game, gpaj_active(), true ) ) { $game = 'pilot'; }
 	echo '<div class="wrap"><h1>Mini-jeux GoPlay Arena</h1>';
 	if ( isset( $_GET['done'] ) ) { echo '<div class="notice notice-success is-dismissible"><p>Classement mis à jour.</p></div>'; }
 	$ver = get_option( 'gpaj_remote_ver' ); $at = (int) get_option( 'gpaj_synced_at' );
@@ -342,6 +349,7 @@ function gpaj_admin() {
 	echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">' . wp_nonce_field( 'gpaj_sync', '_wpnonce', true, false ) . '<input type="hidden" name="action" value="gpaj_sync"><button class="button button-primary">Mettre à jour les jeux maintenant</button></form></div>';
 	echo '<h2 class="nav-tab-wrapper">';
 	foreach ( $names as $k => $n ) {
+		if ( ! in_array( $k, gpaj_active(), true ) ) { continue; }
 		echo '<a class="nav-tab' . ( $k === $game ? ' nav-tab-active' : '' ) . '" href="' . esc_url( admin_url( 'tools.php?page=gpa-jeu&game=' . $k ) ) . '">' . esc_html( $n ) . '</a>';
 	}
 	echo '</h2>';
