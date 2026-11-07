@@ -2,12 +2,12 @@
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
  * Description: Mini-jeux pour les tables (QR code) : Arena Defender, GoSpace, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.6.3
+ * Version: 1.7.0
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.6.3' );
+define( 'GPAJ_VER', '1.7.0' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
@@ -31,7 +31,7 @@ function gpaj_title( $k ) { $n = gpaj_names(); return isset( $n[ $k ] ) ? $n[ $k
 function gpaj_head_icons( $k ) {
 	$f = gpaj_icon_path( $k, 180 );
 	if ( ! file_exists( $f ) ) { return '<meta name="theme-color" content="#07051A">'; }
-	$b = '/jeu/' . $k . '/'; $v = '?v=' . filemtime( $f ); $t = esc_attr( gpaj_title( $k ) );
+	$b = ( $k === 'pilot' && gpaj_is_gospace_host() ) ? '/' : '/jeu/' . $k . '/'; $v = '?v=' . filemtime( $f ); $t = esc_attr( gpaj_title( $k ) );
 	return '<link rel="apple-touch-icon" sizes="180x180" href="' . $b . 'icon-180.png' . $v . '">'
 		. '<link rel="icon" type="image/png" sizes="192x192" href="' . $b . 'icon-192.png' . $v . '">'
 		. '<link rel="manifest" href="' . $b . 'manifest.webmanifest' . $v . '">'
@@ -40,8 +40,30 @@ function gpaj_head_icons( $k ) {
 		. '<meta name="apple-mobile-web-app-title" content="' . $t . '"><meta name="application-name" content="' . $t . '">'
 		. '<meta name="theme-color" content="#07051A">';
 }
+/* ---------- Sous-domaine dédié : gospace.goplayarena.re sert GoSpace (clé « pilot ») ---------- */
+define( 'GPAJ_GOSPACE_HOST', 'gospace.goplayarena.re' );
+function gpaj_is_gospace_host() { return strtolower( (string) ( $_SERVER['HTTP_HOST'] ?? '' ) ) === GPAJ_GOSPACE_HOST; }
+/* le sous-domaine répond-il bien (DNS + certificat + même WordPress) ? vérifié au plus une fois par heure */
+function gpaj_gospace_live() {
+	$c = get_transient( 'gpaj_gospace_live' );
+	if ( $c !== false ) { return $c === 'yes'; }
+	$r  = wp_remote_get( 'https://' . GPAJ_GOSPACE_HOST . '/?gpaj_ping=1', array( 'timeout' => 6, 'redirection' => 0 ) );
+	$ok = ! is_wp_error( $r ) && trim( wp_remote_retrieve_body( $r ) ) === 'gpaj-ok';
+	set_transient( 'gpaj_gospace_live', $ok ? 'yes' : 'no', $ok ? DAY_IN_SECONDS : HOUR_IN_SECONDS );
+	return $ok;
+}
+function gpaj_home_url( $k ) { return ( $k === 'pilot' && gpaj_gospace_live() ) ? 'https://' . GPAJ_GOSPACE_HOST . '/' : home_url( '/jeu/' . $k . '/' ); }
 add_action( 'template_redirect', function () {
 	$path = trim( (string) parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ), '/' );
+	if ( gpaj_is_gospace_host() ) {
+		if ( isset( $_GET['gpaj_ping'] ) ) { nocache_headers(); header( 'Content-Type: text/plain' ); echo 'gpaj-ok'; exit; }
+		if ( $path === '' ) { $path = 'jeu/pilot'; }
+		elseif ( preg_match( '#^(icon-(180|192|512)\.png|manifest\.webmanifest)$#', $path ) ) { $path = 'jeu/pilot/' . $path; }
+		elseif ( strpos( $path, 'jeu/' ) !== 0 ) { wp_redirect( 'https://' . GPAJ_GOSPACE_HOST . '/', 302 ); exit; }
+	} elseif ( $path === 'jeu/pilot' && gpaj_gospace_live() ) {
+		/* l'ancienne adresse renvoie vers le sous-domaine (les QR déjà imprimés continuent de marcher) */
+		wp_redirect( 'https://' . GPAJ_GOSPACE_HOST . '/', 301 ); exit;
+	}
 	if ( preg_match( '#^jeu/([a-z]{3,12})/(icon-(180|192|512)\.png|manifest\.webmanifest)$#', $path, $mm ) ) {
 		$k = $mm[1];
 		if ( ! file_exists( gpaj_icon_path( $k, 180 ) ) ) { return; }
@@ -49,7 +71,7 @@ add_action( 'template_redirect', function () {
 		header( 'Cache-Control: public, max-age=604800' );
 		if ( $mm[2] === 'manifest.webmanifest' ) {
 			header( 'Content-Type: application/manifest+json; charset=utf-8' );
-			$base = '/jeu/' . $k . '/'; $v = '?v=' . filemtime( gpaj_icon_path( $k, 180 ) ); $t = gpaj_title( $k );
+			$base = ( $k === 'pilot' && gpaj_is_gospace_host() ) ? '/' : '/jeu/' . $k . '/'; $v = '?v=' . filemtime( gpaj_icon_path( $k, 180 ) ); $t = gpaj_title( $k );
 			echo wp_json_encode( array( 'name' => $t, 'short_name' => $t, 'start_url' => $base, 'scope' => $base, 'display' => 'fullscreen', 'orientation' => 'any', 'background_color' => '#07051A', 'theme_color' => '#07051A',
 				'icons' => array( array( 'src' => $base . 'icon-192.png' . $v, 'sizes' => '192x192', 'type' => 'image/png' ), array( 'src' => $base . 'icon-512.png' . $v, 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ) ) ) );
 		} else {
@@ -71,6 +93,7 @@ add_action( 'template_redirect', function () {
 		. '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">'
 		. '<style>:root{color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>'
 		. gpaj_head_icons( $map[ $path ] )
+		. '<script>window.GPAJ_HOME=' . wp_json_encode( gpaj_home_url( $map[ $path ] ) ) . ';</script>'
 		. '</head><body>';
 	$up = gpaj_dir() . $file;
 	readfile( file_exists( $up ) ? $up : __DIR__ . '/' . $file );
@@ -261,6 +284,7 @@ register_deactivation_hook( __FILE__, function () { wp_clear_scheduled_hook( 'gp
 add_action( 'admin_post_gpaj_sync', function () {
 	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Accès refusé' ); }
 	check_admin_referer( 'gpaj_sync' );
+	delete_transient( 'gpaj_gospace_live' );
 	update_option( 'gpaj_sync_msg', gpaj_sync( true, gpaj_latest_sha() ), false );
 	wp_safe_redirect( admin_url( 'tools.php?page=gpa-jeu&synced=1' ) );
 	exit;
@@ -313,6 +337,7 @@ function gpaj_admin() {
 	$ver = get_option( 'gpaj_remote_ver' ); $at = (int) get_option( 'gpaj_synced_at' );
 	echo '<div class="card" style="max-width:720px"><h2>Mise à jour automatique</h2><p>Les jeux se mettent à jour tout seuls depuis GitHub (fabricelau/goplay-arena-jeu) dès que Claude y envoie une modification (signal GitHub), et par sécurité toutes les 15 minutes.</p>';
 	echo '<p><strong>Version en ligne :</strong> ' . ( $ver ? esc_html( $ver ) : 'jeux d\'origine de l\'extension' ) . ( $at ? ' · dernière mise à jour le ' . esc_html( ( new DateTime( '@' . $at ) )->setTimezone( gpaj_tz() )->format( 'd/m/Y à H:i' ) ) : '' ) . '</p>';
+	echo '<p><strong>GoSpace sur ' . esc_html( GPAJ_GOSPACE_HOST ) . ' :</strong> ' . ( gpaj_gospace_live() ? '✅ actif (l\'ancienne adresse /jeu/pilot/ y renvoie automatiquement)' : '⏳ pas encore joignable : crée le sous-domaine dans le cPanel o2switch (même dossier que le site), puis clique sur « Mettre à jour les jeux maintenant »' ) . '</p>';
 	if ( $msg = get_option( 'gpaj_sync_msg' ) ) { echo '<p><em>Dernière vérification : ' . esc_html( $msg ) . '</em></p>'; }
 	echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">' . wp_nonce_field( 'gpaj_sync', '_wpnonce', true, false ) . '<input type="hidden" name="action" value="gpaj_sync"><button class="button button-primary">Mettre à jour les jeux maintenant</button></form></div>';
 	echo '<h2 class="nav-tab-wrapper">';

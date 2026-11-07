@@ -1496,6 +1496,7 @@ function syncDefi(){DF=defiToday();var el=$("sDefi");if(!el)return;el.textConten
   el.append(a,dn,dd,st)}
 /* ---------- Partage du score : image prête pour les réseaux ---------- */
 var shareRank=0;
+function gameHome(){return window.GPAJ_HOME||"https://gospace.goplayarena.re/"}
 function shareImage(){
   var r=lastResult||{score:0,wave:0,kills:0},W2=1080,H2=1350,cv=document.createElement("canvas");cv.width=W2;cv.height=H2;var c=cv.getContext("2d");
   var bg=c.createLinearGradient(0,0,0,H2);bg.addColorStop(0,"#140A3C");bg.addColorStop(.55,"#07051A");bg.addColorStop(1,"#1A0630");c.fillStyle=bg;c.fillRect(0,0,W2,H2);
@@ -1515,12 +1516,12 @@ function shareImage(){
   c.font="600 44px 'Chakra Petch',sans-serif";c.fillStyle="#EDEAFF";c.fillText("POINTS · VAGUE "+r.wave+" · "+fmt(r.kills||0)+" ENNEMIS",W2/2,1090);
   if(shareRank){var t=shareRank===1?"1ER DU JOUR":shareRank+"E DU JOUR";c.font="700 40px 'Chakra Petch',sans-serif";var tw=c.measureText(t).width+60;c.fillStyle="#FFC22E";c.beginPath();if(c.roundRect)c.roundRect(W2/2-tw/2,1120,tw,62,31);else c.rect(W2/2-tw/2,1120,tw,62);c.fill();c.fillStyle="#1A0E00";c.fillText(t,W2/2,1165)}
   c.font="700 52px 'Chakra Petch',sans-serif";c.fillStyle="#3DF0FF";c.fillText("VIENS ME BATTRE !",W2/2,1250);
-  c.font="500 34px 'Chakra Petch',sans-serif";c.fillStyle="#C9C6E8";c.fillText("goplayarena.re/jeu/pilot",W2/2,1300);
+  c.font="500 34px 'Chakra Petch',sans-serif";c.fillStyle="#C9C6E8";c.fillText(gameHome().replace(/^https?:\/\/(www\.)?/,"").replace(/\/$/,""),W2/2,1300);
   return cv;
 }
 function shareScore(){
   var btn=$("bShare"),old=btn.textContent;btn.textContent="Préparation…";
-  var cv=shareImage(),txt="J'ai fait "+fmt((lastResult||{}).score||0)+" points à GoSpace chez GoPlay Arena ! Viens me battre : https://www.goplayarena.re/jeu/pilot/";
+  var cv=shareImage(),txt="J'ai fait "+fmt((lastResult||{}).score||0)+" points à GoSpace chez GoPlay Arena ! Viens me battre : "+gameHome();
   var done=function(){btn.textContent=old};
   cv.toBlob(function(bl){
     if(!bl){done();return}
