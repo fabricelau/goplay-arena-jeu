@@ -2,12 +2,12 @@
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
  * Description: Mini-jeux pour les tables (QR code) : Arena Defender, GoSpace, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.9.0
+ * Version: 1.9.1
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.9.0' );
+define( 'GPAJ_VER', '1.9.1' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
@@ -61,6 +61,9 @@ add_action( 'template_redirect', function () {
 		if ( isset( $_GET['gpaj_ping'] ) ) { nocache_headers(); header( 'Content-Type: text/plain' ); echo 'gpaj-ok'; exit; }
 		if ( $path === '' ) { $path = 'jeu/pilot'; }
 		elseif ( preg_match( '#^(icon-(180|192|512)\.png|manifest\.webmanifest)$#', $path ) ) { $path = 'jeu/pilot/' . $path; }
+		/* adresses que l'iPhone essaie tout seul pour l'icône d'écran d'accueil */
+		elseif ( preg_match( '#^apple-touch-icon(-precomposed)?(-180x180)?\.png$#', $path ) ) { $path = 'jeu/pilot/icon-180.png'; }
+		elseif ( $path === 'favicon.ico' ) { $path = 'jeu/pilot/icon-192.png'; }
 		elseif ( strpos( $path, 'jeu/' ) !== 0 ) { wp_redirect( 'https://' . GPAJ_GOSPACE_HOST . '/', 302 ); exit; }
 	} elseif ( preg_match( '#^jeu(/([a-z]{3,12}))?$#', $path, $jm ) && ! in_array( $jm[2] ?? 'arena', gpaj_active(), true ) ) {
 		/* jeu retiré : on renvoie vers GoSpace */

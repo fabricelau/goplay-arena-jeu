@@ -1,5 +1,5 @@
 {
- "version": "2026.11.08-212941",
+ "version": "2026.11.08-225923",
  "files": {
   "chain.html": "9e2c4a82c0a2575061b4cd0114385430b9c8a59ea45a8c7e27a3c87131a5c955",
   "color.html": "097caa9152438086d30cc20ea165a70e7b8594aba95c8c9d247d50dfd2ea3828",
@@ -32,7 +32,7 @@
  },
  "games": {},
  "plugin": {
-  "version": "1.9.0",
-  "sha": "19889453e33c47e8473afde56841001b7d1674dcff1fbbc40902defe3c2c88e1"
+  "version": "1.9.1",
+  "sha": "89afb29e2ad6d0d654aa83c19d78a807f0cc6fcb6f318d846a5b76f015521400"
  }
 }
