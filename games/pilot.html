@@ -461,7 +461,7 @@ if($("bMute"))$("bMute").onclick=toggleMute;$("hMute").onclick=toggleMute;syncMu
 /* ---------- Musique synthwave générée en direct (aucun fichier) ---------- */
 var MUS={on:true,playing:false,step:0,next:0,timer:null,out:null,level:1,nb:null};
 function musLevel(){if(!g)return 1;if(g.bossOn)return 4;if(g.choosing||g.between>0)return 1;return g.wave>=4?3:g.wave>=2?2:1}
-function musBpm(){return 148+Math.min(g?g.wave:0,12)*1.2+(MUS.level===4?8:0)+(MUS.heat||0)*10}
+function musBpm(){return 112+Math.min(g?g.wave:0,12)*.8+(MUS.level===4?6:0)+(MUS.heat||0)*6}
 var CHORDS=[[110,130.81,164.81],[87.31,110,130.81],[130.81,164.81,196],[98,123.47,146.83]]; /* La m, Fa, Do, Sol */
 var BOSSCH=[[110,130.81,164.81],[116.54,138.59,174.61],[103.83,123.47,155.56],[110,130.81,164.81]];
 function musNoise(){if(MUS.nb)return MUS.nb;var n=AC.sampleRate*.5,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0),v=0,hold=Math.max(1,Math.round(AC.sampleRate/16000));for(var i=0;i<n;i++){if(i%hold===0)v=Math.random()<.5?-1:1;d[i]=v}return MUS.nb=b}
@@ -478,44 +478,52 @@ function mNoise(t,dur,vol,type,freq){
   gn.gain.setValueAtTime(vol,t);gn.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(gn);gn.connect(MUS.out);s.start(t);s.stop(t+dur+.02);
 }
 function mKick(t){mNote("sine",160,t,.22,.9,800,42)}
-/* ---- Rock 8 bits (Mi mineur) : Mi m – Do – Ré – Si, guitare rythmique en carrés, basse triangle, batterie en bruit ---- */
-var E2=82.41;function nE(n){return E2*Math.pow(2,n/12)}            /* n = demi-tons au-dessus de Mi 2 */
-var ROOTS=[0,-4,-2,-5],BOSSR=[0,1,0,-1];                           /* Mi, Do, Ré, Si  |  boss : Mi, Fa, Mi, Ré# */
-var RIFF=[[19,19,22,24,22,19,17,19],[15,15,19,20,19,15,12,15],[17,17,21,22,21,17,14,17],[19,23,26,23,19,18,19,23]];
-/* thèmes de boss : chaque boss a sa propre ligne de basse et son riff */
+/* ---- Synthwave douce et entraînante (La mineur) : La m – Fa – Do – Sol ----
+   nappes chaudes, basse ronde en croches, arpèges cristallins avec écho, mélodie douce ;
+   l'intensité monte avec les vagues et le combo, chaque boss a sa progression plus sombre */
+var A2=110;function nA(n){return A2*Math.pow(2,n/12)}
+var PROG=[{r:0,c:[0,3,7]},{r:-4,c:[0,4,7]},{r:3,c:[0,4,7]},{r:-2,c:[0,4,7]}];
 var BOSS_TH={
-  beam:{r:[0,-2,-4,-5],riff:[[24,24,27,24,29,27,24,22],[22,22,26,22,27,26,22,20],[20,20,24,20,26,24,20,19],[19,22,24,26,27,26,24,22]]},
-  hive:{r:[0,3,-2,-5],riff:[[24,31,24,31,26,31,27,31],[27,34,27,34,29,34,31,34],[22,29,22,29,24,29,26,29],[19,26,19,26,23,26,24,27]]},
-  snake:{r:[0,1,3,1],riff:[[24,25,28,25,24,25,28,30],[25,24,22,24,25,27,25,24],[27,28,27,25,24,22,24,25],[24,25,24,22,21,22,24,25]]}
+  spiral:[{r:0,c:[0,3,7]},{r:1,c:[0,4,7]},{r:-2,c:[0,3,7]},{r:-4,c:[0,4,7]}],
+  snake:[{r:0,c:[0,3,7]},{r:1,c:[0,4,7]},{r:0,c:[0,3,7]},{r:-1,c:[0,4,7]}],
+  beam:[{r:0,c:[0,3,7]},{r:-2,c:[0,3,7]},{r:-4,c:[0,4,7]},{r:-5,c:[0,4,7]}],
+  hive:[{r:0,c:[0,3,7]},{r:3,c:[0,4,7]},{r:-2,c:[0,4,7]},{r:-5,c:[0,3,7]}]
 };
-var BRIFF=[[24,25,24,22,24,25,27,25],[25,24,25,27,29,27,25,24],[24,22,24,25,24,22,19,22],[23,22,23,25,27,25,23,22]];
+/* mélodie (demi-tons au-dessus de La 3), une mesure = 8 croches, null = silence */
+var MEL=[[12,null,15,null,19,17,15,null],[15,null,12,null,8,null,10,12],[10,null,15,null,19,null,17,15],[14,null,12,null,10,null,7,null]];
+var BMEL=[[12,null,13,12,null,10,12,null],[13,null,17,null,16,13,null,12],[10,null,12,10,null,7,10,null],[8,null,12,null,13,null,12,8]];
+function mPad(f,t,dur,vol){
+  var g0=AC.createGain(),fl=AC.createBiquadFilter();fl.type="lowpass";fl.frequency.setValueAtTime(900,t);fl.frequency.linearRampToValueAtTime(1500,t+dur*.5);fl.frequency.linearRampToValueAtTime(800,t+dur);fl.Q.value=.7;
+  g0.gain.setValueAtTime(0,t);g0.gain.linearRampToValueAtTime(vol,t+.35);g0.gain.setValueAtTime(vol,t+dur-.3);g0.gain.linearRampToValueAtTime(0,t+dur+.25);
+  [-7,7].forEach(function(dt){var o=AC.createOscillator();o.type="sawtooth";o.frequency.value=f;o.detune.value=dt;o.connect(fl);o.start(t);o.stop(t+dur+.3)});
+  fl.connect(g0);g0.connect(MUS.out);
+}
 function mDuck(t){}
 function musStep(st,t,s16){
-  var lv=MUS.level,beat=st%16,barN=Math.floor(st/16),bar=barN%4,boss=lv===4,th=boss?BOSS_TH[g&&g.bossKind]:null,root=(th?th.r:boss?BOSSR:ROOTS)[bar],fill=(barN%8===7&&beat>=12),hz=MUS.heat||0;
-  /* batterie 8 bits */
-  var kick=(beat===0||beat===8||beat===10||(lv>=3&&beat===6))&&!fill;
-  if(kick){mNote("square",150,t,.09,.32,3000,40);mNoise(t,.03,.18,"lowpass",900)}
-  if((beat===4||beat===12)&&!fill){mNoise(t,.12,.34,"bandpass",2200);mNote("triangle",220,t,.06,.12,4000,120)}
-  if(fill){mNoise(t,.06,.2+(beat-12)*.05,"bandpass",1500+(beat-12)*500);if(beat%2===0)mNote("square",300-(beat-12)*40,t,.07,.12,3000,80)}
-  if(beat%2===0)mNoise(t,.025,lv>=2?.09:.06,"highpass",8000);else if(lv>=3)mNoise(t,.015,.05,"highpass",9500);
-  if(beat===0&&barN%4===0&&lv>=2)mNoise(t,.5,.12,"highpass",6000);
-  /* basse triangle : croches qui galopent */
-  if(beat%2===0){var bo=(beat===6||beat===14)?12:0;mNote("triangle",nE(root+bo),t,s16*1.7,.26,6000)}
-  else if(lv>=3)mNote("triangle",nE(root),t,s16*.8,.18,6000);
-  /* guitare rythmique : accords de quinte étouffés (« chug ») */
-  var pm=beat%4===0?s16*1.8:s16*.6;
-  mNote("pulse25",nE(root+12),t,pm,.05,3500,null,MUS.bassBus);mNote("pulse25",nE(root+19),t,pm,.035,3500,null,MUS.bassBus);
-  /* solo : le riff principal (vague 2+, ou dès la vague 1 en plus doux) */
-  /* l'intensité monte avec le combo : charleston en double croches, crash, riff doublé à l'octave, arpège */
-  if(hz>.35&&beat%2===1)mNoise(t,.015,.05+hz*.03,"highpass",10000);
-  if(hz>.85&&beat===0)mNoise(t,.7,.13,"highpass",5000);
-  if(hz>.6&&lv<3){var ar2=[0,7,12,19][beat%4];mNote("pulse12",nE(root+24+ar2),t,s16*.5,.018+hz*.008,7000)}
-  if(beat%2===0){var n=(th?th.riff:boss?BRIFF:RIFF)[bar][beat/2],v=lv>=2?.07:.045;if(hz>.6&&!(lv<2&&barN%2===1))mNote("square",nE(n+24),t,s16*1.2,.022*hz,7000,null,MUS.lead);
-    if(!(lv<2&&barN%2===1)){mNote("square",nE(n+12),t,s16*1.5,v,6000,null,MUS.lead);if(lv>=3)mNote("pulse12",nE(n+15+(bar===3?1:0)),t,s16*1.3,.03,6000,null,MUS.lead)}}
-  /* arpège « tremolo » ultra rapide en boss et vague 6+ */
-  if(lv>=3&&(boss||barN%2===1)){var ar=[0,7,12,19][beat%4];mNote("pulse12",nE(root+24+ar),t,s16*.5,.022,7000)}
-  /* glissando de guitare avant la reprise */
-  if(fill&&beat===12)mNote("square",nE(root+12),t,s16*4,.06,6000,nE(root+36));
+  var lv=MUS.level,beat=st%16,barN=Math.floor(st/16),bar=barN%4,boss=lv===4,hz=MUS.heat||0,
+      prog=boss?(BOSS_TH[g&&g.bossKind]||BOSS_TH.spiral):PROG,ch=prog[bar],root=ch.r,fill=(barN%8===7&&beat>=12);
+  /* nappe : un accord par mesure, chaud et doux */
+  if(beat===0)ch.c.forEach(function(iv,i){mPad(nA(root+iv+12),t,s16*16,(i?.016:.02)*(lv===1?1.15:1))});
+  /* batterie douce : grosse caisse ronde, clap aéré, charleston léger avec un peu de swing */
+  var kick=beat===0||beat===8||(lv>=2&&beat===10)||(boss&&(beat===4||beat===12));
+  if(kick&&!fill)mNote("sine",120,t,.28,.55,900,45);
+  if(beat===4||beat===12){mNoise(t,.16,.11,"bandpass",1700);mNoise(t+.012,.12,.06,"bandpass",2600)}
+  if(fill)mNoise(t,.05,.05+(beat-12)*.025,"bandpass",2000+(beat-12)*400);
+  var sw=beat%2===1?s16*.12:0;
+  if(beat%2===0||lv>=3||hz>.35)mNoise(t+sw,.03,beat%4===2?.05:.028,"highpass",8500);
+  if(beat%4===2&&(lv>=2||hz>.5))mNoise(t,.14,.035,"highpass",7000);
+  /* basse ronde : croches qui pompent (octave sur le contretemps) */
+  if(beat%2===0){var oct=(beat%4===2)?12:0;mNote("sawtooth",nA(root-12+oct),t,s16*1.6,.11,lv>=3?700:520)}
+  if(boss&&beat%2===1)mNote("sawtooth",nA(root-12),t,s16*.8,.07,600);
+  /* arpège cristallin avec écho (vague 2+, ou dès que le combo monte) */
+  if(lv>=2||hz>.3){var arp=[0,1,2,1,0,1,2,3][beat%8],tone=arp===3?12:ch.c[arp];
+    if(beat%(lv>=3||hz>.6?1:2)===0)mNote("triangle",nA(root+tone+24),t,s16*1.4,.032+hz*.012,5000,null,MUS.lead)}
+  /* mélodie douce (vague 3+ et boss, une mesure sur deux ; en continu quand le combo est haut) */
+  if(beat%2===0&&(lv>=3||boss)&&(barN%2===0||hz>.5)){var m=(boss?BMEL:MEL)[bar][beat/2];
+    if(m!==null){mNote("triangle",nA(m+12),t,s16*2.6,.05,4000,null,MUS.lead);mNote("sine",nA(m+24),t,s16*2.2,.018+hz*.02,6000,null,MUS.lead)}}
+  /* montée avant la reprise et éclat quand le combo est très haut */
+  if(fill&&beat===12)mNoise(t,s16*4,.05,"highpass",4000);
+  if(hz>.85&&beat===0)mNoise(t,.9,.07,"highpass",5500);
 }
 function musTick(){
   if(!MUS.playing||!AC)return;
