@@ -2,22 +2,22 @@
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
  * Description: Mini-jeux pour les tables (QR code) : Arena Defender, GoSpace, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.8.0
+ * Version: 1.9.0
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.8.0' );
+define( 'GPAJ_VER', '1.9.0' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
 function gpaj_extra() { $x = get_option( 'gpaj_extra_games', array() ); return is_array( $x ) ? $x : array(); }
 function gpaj_games() { $g = gpaj_base_games(); foreach ( gpaj_extra() as $k => $v ) { if ( empty( $g[ $k ] ) ) { $g[ $k ] = $v['file']; } } return $g; }
-function gpaj_names() { $x = array(); foreach ( gpaj_extra() as $k => $v ) { $x[ $k ] = $v['name']; } return array_merge( $x, array( 'arena' => 'Arena Defender', 'pilot' => 'GoSpace', 'pixel' => 'Pixel Rush', 'laser' => 'Laser Reflex', 'chain' => 'Target Chain', 'memory' => 'Memory Grid', 'color' => 'Color Switch' ) ); }
+function gpaj_names() { $x = array(); foreach ( gpaj_extra() as $k => $v ) { $x[ $k ] = $v['name']; } return array_merge( $x, array( 'arena' => 'Arena Defender', 'pilot' => 'GoSpace', 'survie' => 'GoSpace · Survie', 'pixel' => 'Pixel Rush', 'laser' => 'Laser Reflex', 'chain' => 'Target Chain', 'memory' => 'Memory Grid', 'color' => 'Color Switch' ) ); }
 function gpaj_paths() { $x = array(); foreach ( gpaj_extra() as $k => $v ) { $x[ $k ] = '/jeu/' . $k . '/'; } return array_merge( $x, array( 'arena' => '/jeu/', 'pilot' => '/jeu/pilot/', 'pixel' => '/jeu/pixel/', 'laser' => '/jeu/laser/', 'chain' => '/jeu/chain/', 'memory' => '/jeu/memory/', 'color' => '/jeu/color/' ) ); }
-function gpaj_game( $g ) { $g = sanitize_key( (string) $g ); return isset( gpaj_games()[ $g ] ) ? $g : 'arena'; }
+function gpaj_game( $g ) { $g = sanitize_key( (string) $g ); if ( $g === 'survie' ) { return 'survie'; } return isset( gpaj_games()[ $g ] ) ? $g : 'arena'; }
 /* Jeux en service : seul GoSpace reste en ligne (les autres sont retirés du site, leurs fichiers et scores restent archivés) */
-function gpaj_active() { return array( 'pilot' ); }
+function gpaj_active() { return array( 'pilot', 'survie' ); }
 function gpaj_sfx( $game ) { return $game === 'arena' ? '' : '_' . $game; }
 function gpaj_key_all( $game = 'arena' ) { return 'gpa_jeu_all' . gpaj_sfx( $game ); }
 define( 'GPAJ_KEEP', 100 );
@@ -161,6 +161,7 @@ function gpaj_post( WP_REST_Request $req ) {
 	if ( gpaj_bad_name( $name ) ) { return new WP_Error( 'gpaj_name', 'Choisis un autre nom.', array( 'status' => 400 ) ); }
 	switch ( $game ) {
 		case 'arena':  $ok = $score <= $dur * 650 + $wave * $wave * 60 + 1000 && $wave <= intdiv( $dur, 3 ) + 2; break;
+		case 'survie':
 		case 'pilot':  $ok = $score <= $dur * 5000 + $wave * $wave * 800 + 10000 && $wave <= intdiv( $dur, 4 ) + 2; break;
 		case 'memory': $ok = $score <= $wave * $wave * $wave * 4 + $wave * 80 + 1000 && $wave <= intdiv( $dur, 2 ) + 2; break;
 		case 'color':  $ok = $score <= $dur * 400 + 1000 && $wave <= intdiv( $dur, 3 ) + 2; break;
@@ -302,6 +303,19 @@ add_action( 'admin_menu', function () {
 	add_management_page( 'Mini-jeux', 'Mini-jeux GoPlay', 'manage_options', 'gpa-jeu', 'gpaj_admin' );
 } );
 
+/* Nettoyage ponctuel demandé : retirer le score de 52 387 pts de GoSpace (classements tout temps et jours récents) */
+add_action( 'init', function () {
+	if ( get_option( 'gpaj_clean_52387' ) ) { return; }
+	$keys = array( gpaj_key_all( 'pilot' ) );
+	for ( $i = 0; $i < 30; $i++ ) { $keys[] = gpaj_key_day( 'pilot', ( new DateTime( '-' . $i . ' days', gpaj_tz() ) )->format( 'Y-m-d' ) ); }
+	$n = 0;
+	foreach ( $keys as $k ) {
+		$l = gpaj_list( $k ); if ( ! $l ) { continue; }
+		$f = array_values( array_filter( $l, function ( $r ) { return (int) ( $r['score'] ?? 0 ) !== 52387; } ) );
+		if ( count( $f ) !== count( $l ) ) { $n += count( $l ) - count( $f ); update_option( $k, $f, false ); }
+	}
+	update_option( 'gpaj_clean_52387', $n ? $n : 'none', false );
+} );
 add_action( 'admin_post_gpaj_del', function () {
 	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Accès refusé' ); }
 	check_admin_referer( 'gpaj_del' );
@@ -353,7 +367,7 @@ function gpaj_admin() {
 		echo '<a class="nav-tab' . ( $k === $game ? ' nav-tab-active' : '' ) . '" href="' . esc_url( admin_url( 'tools.php?page=gpa-jeu&game=' . $k ) ) . '">' . esc_html( $n ) . '</a>';
 	}
 	echo '</h2>';
-	$url = home_url( $paths[ $game ] );
+	$url = $game === 'survie' ? gpaj_home_url( 'pilot' ) : home_url( $paths[ $game ] );
 	echo '<p>Adresse du jeu (QR code) : <a href="' . esc_url( $url ) . '" target="_blank">' . esc_html( $url ) . '</a>. Supprime ici un nom déplacé ou un score suspect.</p>';
 	gpaj_admin_table( 'Aujourd\'hui (' . ( new DateTime( 'now', gpaj_tz() ) )->format( 'd/m/Y' ) . ')', gpaj_list( gpaj_key_day( $game ) ), 'day', $game );
 	gpaj_admin_table( 'Tout temps', gpaj_list( gpaj_key_all( $game ) ), 'all', $game );
