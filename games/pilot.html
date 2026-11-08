@@ -194,6 +194,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .cico{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:radial-gradient(circle at 30% 25%,color-mix(in srgb,var(--cc) 55%,#fff),var(--cc) 55%,color-mix(in srgb,var(--cc) 55%,#000));box-shadow:0 0 18px color-mix(in srgb,var(--cc) 60%,transparent),inset 0 -3px 6px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.35)}
 .cico svg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
 .card:hover .cico,.card:focus-visible .cico{transform:scale(1.06)}
+.row2.one{grid-template-columns:1fr}
 .bchip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 3px;font:700 14px var(--display);opacity:0;animation:rise .45s ease-out forwards}
 @media (orientation:landscape) and (max-height:560px){.blist{max-height:58vh;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.badge{padding:5px 8px}.medal{--ms:44px}.wide{width:min(860px,100%)}}
 </style>
@@ -220,7 +221,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
       <div><i style="border-color:#B57BFF"></i>S · Ralenti</div>
       <div><i style="border-color:#5CFFB0"></i>B · Bulle</div>
       <div><i style="border-color:#FFFFFF"></i>N · Nova</div>
-      <div><i style="border-color:#FFD53D"></i>I · Invulnérable 5 s</div>
+      <div><i style="border-color:#FFD53D"></i>I · Invulnérable</div>
     </div>
     </div>
     <div class="col colB">
@@ -229,11 +230,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <div class="defi" id="sDefi"></div>
     <div class="streak" id="sStreak"></div>
     <button class="play" id="bPlay">JOUER</button>
-    <div class="row2">
-      <button class="ghost" id="bBoard">Classement</button>
-      <button class="ghost" id="bBadges">Badges 0/31</button>
-    </div>
-    <div class="row2"><button class="ghost" id="bShip">Vaisseau : Classique</button><button class="ghost" id="bSet">⚙ Réglages</button></div>
+    <div class="row2"><button class="ghost" id="bBoard">Classement</button><button class="ghost" id="bShip">Vaisseau : Classique</button></div>
+    <div class="row2 one"><button class="ghost" id="bSet">⚙ Réglages</button></div>
     <div class="site">goplayarena.re</div>
     </div>
   </div>
@@ -1234,7 +1232,7 @@ var SHIPS=[
   {k:"morganite",n:"Morganite",shape:"crescent",col:"#FF9EC4",acc:"#FFE6F0",cond:"Jouer 5 jours de suite",ok:function(p){return p.bestStreak>=5}},
   {k:"spinelle",n:"Spinelle",shape:"blade",col:"#FF3D7F",acc:"#B57BFF",cond:"Atteindre la vague 12",ok:function(p){return p.bestWave>=12}},
   {k:"alexandrite",n:"Alexandrite",shape:"trident",col:"#1FC9A0",acc:"#C64BFF",cond:"Détruire 5 000 ennemis au total",ok:function(p){return p.kills>=5000}},
-  {k:"diamant",n:"Diamant",shape:"gem",col:"#F2FBFF",acc:"#7FE9FF",cond:"Obtenir 25 badges",ok:function(){var o=badgesGot(),n=0;for(var k in o)n++;return n>=25}}
+  {k:"diamant",n:"Diamant",shape:"gem",col:"#F2FBFF",acc:"#7FE9FF",cond:"Atteindre la vague 20",ok:function(p){return p.bestWave>=20}}
 ];
 function prog(){var o={};try{o=JSON.parse(store("gpapi_prog")||"{}")||{}}catch(e){}return {bestWave:o.bestWave|0,boss:o.boss|0,kills:o.kills|0,games:o.games|0,ship:o.ship||"classic",trail:o.trail||"cyan",rocks:o.rocks|0,bossKinds:o.bossKinds||{},maxScore:o.maxScore|0,maxKc:o.maxKc|0,bestStreak:o.bestStreak|0}}
 function saveProg(p){store("gpapi_prog",JSON.stringify(p))}
@@ -1266,7 +1264,7 @@ var TRAILS=[
  {k:"sang",n:"Rouge sang",tr:["#FF2D55"],ls:"#FF4060",cond:"Battre 2 boss au total",ok:function(p){return p.boss>=2}},
  {k:"ocean",n:"Océan",tr:["#2F6BFF","#5EE6E0"],ls:"#5EE6E0",cond:"Jouer 3 jours de suite",ok:function(p){return p.bestStreak>=3}},
  {k:"or",n:"Or pur",tr:["#FFC22E","#FFE98A"],ls:"#FFD53D",cond:"30 000 points en une partie",ok:function(p){return p.maxScore>=30000}},
- {k:"aurore",n:"Aurore",tr:["#3DF0FF","#7CFFB0","#FF5CF0"],ls:"#7CFFB0",cond:"Obtenir 15 badges",ok:function(){var o=badgesGot(),n=0;for(var k in o)n++;return n>=15}},
+ {k:"aurore",n:"Aurore",tr:["#3DF0FF","#7CFFB0","#FF5CF0"],ls:"#7CFFB0",cond:"Jouer 50 parties",ok:function(p){return p.games>=50}},
  {k:"supernova",n:"Supernova",tr:["#FFFFFF","#FFC22E","#FF5CF0"],ls:"#FFFFFF",cond:"Atteindre la vague 18",ok:function(p){return p.bestWave>=18}},
  {k:"arcenciel",n:"Arc-en-ciel",rain:1,tr:["#FF3D3D","#FFB020","#FFE03D","#4DFF7A","#3DF0FF","#5A6BFF","#C64BFF"],ls:"#FFFFFF",cond:"Réussir 3 défis du jour",ok:function(){return defiCount()>=3}}
 ];
@@ -1382,6 +1380,8 @@ var BADGES=[
  {id:"top1",ic:"trophy",n:"N°1 du jour",d:"Finir premier du classement du jour",t:"n",gl:"N°1",v:function(P){return [P.top1?1:0,1]}}
 ];
 var BORD=["first","k100","k500","k2500","k5000","k10000","k25000","w3","w5","w10","w15","w20","w25","c10","c25","c40","c60","s10k","s25k","s50k","s150k","s300k","boss1","spiral","beam","hive","crown","boss10","clean","flawless","graze","graze60","dash","dash40","supers","supers12","collect","rocks","rocks200","g10","g50","g100","g250","st3","st7","st14","def1","def7","def30","ship10","ship20","ships","trails","top1"];BADGES.sort(function(x,y){return BORD.indexOf(x.id)-BORD.indexOf(y.id)});
+/* Badges retirés (la progression restait liée au navigateur) : liste vidée, plus aucun déblocage ni notification */
+BADGES=[];
 /* ---------- Illustrations des badges (dessinées en vectoriel, mises en cache) ---------- */
 var TPAL={b:["#FFD2AE","#E0915A","#7A3E1C"],a:["#FFFFFF","#C9C6E8","#5B587E"],o:["#FFF4B8","#FFC22E","#8A5A00"],n:["#FFD6FB","#FF5CF0","#6A0F7A"]};
 var GPAL=["#5A5680","#38335E","#1A1538"];
@@ -1461,7 +1461,7 @@ function badgeStats(live){
     near:cur?cur.near:0,dashes:cur?cur.dashes:0,supers:cur?cur.supers:0,pw:cur?cur.powers:0,rocks:p.rocks+add("rocksK"),
     defi:defiCount(),trails:TRAILS.filter(function(T){return T.ok(p)}).length,boss:p.boss+(cur&&!cur.saved?cur.bossKills:0),games:p.games,streak:Math.max(p.bestStreak,streak()),ships:SHIPS.filter(function(sh){return sh.ok(p)}).length,top1:got.top1};
 }
-function unlockBadge(id){
+function unlockBadge(id){if(!BADGES.length)return false;
   var got=badgesGot();if(got[id])return false;got[id]=dayStr(0);store("gpapi_badges",JSON.stringify(got));
   var b=BADGES.filter(function(x){return x.id===id})[0];if(!b)return false;
   if(g){g.newBadges.push(b);if(g.run)g.toasts.push({b:b,t:0})}
@@ -1671,7 +1671,7 @@ document.addEventListener("visibilitychange",function(){if(document.hidden)pause
 $("bShare").onclick=function(){SFX.pick&&SFX.pick();shareScore()};
 $("bOverMenu").onclick=function(){syncDefi();syncBest();syncStreak();syncShipBtn();syncBadgeBtn();show("scrStart")};
 $("bShip").onclick=function(){audio();renderHangar();show("scrShip")};
-$("bBadges").onclick=function(){audio();renderBadges();show("scrBadges")};
+if($("bBadges"))$("bBadges").onclick=function(){audio();renderBadges();show("scrBadges")};
 $("bBadgesBack").onclick=function(){syncBadgeBtn();show("scrStart")};
 $("bShipBack").onclick=function(){syncShipBtn();show("scrStart")};
 /* son de clic sur tous les boutons des menus */
