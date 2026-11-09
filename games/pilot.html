@@ -200,6 +200,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
 .mtabs{max-width:320px;margin:0 auto 8px}
 .brandlogo{display:block;width:62px;height:auto;margin:0 auto 6px;filter:drop-shadow(0 0 12px rgba(91,107,255,.55))}
 .seg4{flex-wrap:wrap}.seg4 button{flex:1 1 22%;min-width:0;padding-left:4px;padding-right:4px;font-size:13px}
+.seg3 button{flex:1;min-width:0;padding-left:4px;padding-right:4px}
 .bchip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 3px;font:700 14px var(--display);opacity:0;animation:rise .45s ease-out forwards}
 @media (orientation:landscape) and (max-height:560px){.blist{max-height:58vh;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.badge{padding:5px 8px}.medal{--ms:44px}.wide{width:min(860px,100%)}}
 </style>
@@ -289,6 +290,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
       <div class="set" id="row_side"><span>Côté du bouton FEU (le joystick se place de l'autre côté)</span><span></span><div class="seg"><button type="button" data-set="side" data-v="left">Gauche</button><button type="button" data-set="side" data-v="right">Droite</button></div></div>
       <label class="set" for="r_cad"><span>Cadence de tir</span><b id="v_cad"></b><input type="range" id="r_cad" min="50" max="150" step="5"></label>
       <div class="set"><span>Vue du jeu (plus large = on voit plus loin)</span><span></span><div class="seg seg4"><button type="button" data-set="zoom" data-v="100">Proche</button><button type="button" data-set="zoom" data-v="85">Normale</button><button type="button" data-set="zoom" data-v="78">Large</button><button type="button" data-set="zoom" data-v="70">Très large</button></div></div>
+      <div class="set"><span>Joystick flottant (il se place sous ton pouce)</span><span></span><div class="seg"><button type="button" data-set="fjoy" data-v="on">Oui</button><button type="button" data-set="fjoy" data-v="off">Non</button></div></div>
+      <div class="set"><span>Tirer en appuyant n'importe où côté FEU</span><span></span><div class="seg"><button type="button" data-set="hold" data-v="on">Oui</button><button type="button" data-set="hold" data-v="off">Non</button></div></div>
+      <div class="set"><span>Dash par glissement rapide du joystick</span><span></span><div class="seg"><button type="button" data-set="flick" data-v="on">Oui</button><button type="button" data-set="flick" data-v="off">Non</button></div></div>
+      <div class="set"><span>Taille des boutons</span><span></span><div class="seg seg3"><button type="button" data-set="bsize" data-v="s">Petite</button><button type="button" data-set="bsize" data-v="m">Normale</button><button type="button" data-set="bsize" data-v="l">Grande</button></div></div>
       <div class="set"><span>Vibrations</span><span></span><div class="seg"><button type="button" data-set="vib" data-v="on">Oui</button><button type="button" data-set="vib" data-v="off">Non</button></div></div>
       <label class="set" for="r_music"><span>Volume de la musique</span><b id="v_music"></b><input type="range" id="r_music" min="0" max="100" step="5"></label>
       <label class="set" for="r_sfx"><span>Volume des effets</span><b id="v_sfx"></b><input type="range" id="r_sfx" min="0" max="100" step="5"></label>
@@ -385,8 +390,8 @@ function renderBoard(el){
 function fmt(n){return Math.round(n).toLocaleString("fr-FR")}
 
 /* ---------- Réglages (mémorisés sur le téléphone) ---------- */
-var SET_DEF={move:60,turn:60,music:60,sfx:80,cad:100,fire:"manual",side:"right",vib:"on",zoom:"70"};
-var SET_OPT={fire:["manual"],side:["left","right"],vib:["on","off"],zoom:["100","85","78","70"]}; /* tir automatique retiré : un ancien réglage « auto » revient au bouton FEU */
+var SET_DEF={move:60,turn:60,music:60,sfx:80,cad:100,fire:"manual",side:"right",vib:"on",zoom:"70",fjoy:"on",hold:"on",flick:"on",bsize:"m"};
+var SET_OPT={fire:["manual"],side:["left","right"],vib:["on","off"],zoom:["100","85","78","70"],fjoy:["on","off"],hold:["on","off"],flick:["on","off"],bsize:["s","m","l"]}; /* tir automatique retiré : un ancien réglage « auto » revient au bouton FEU */
 var SET=(function(){var o={};try{o=JSON.parse(store("gpapi_set")||"{}")||{}}catch(e){}var r={};for(var k in SET_DEF){if(SET_OPT[k])r[k]=SET_OPT[k].indexOf(o[k])>=0?o[k]:SET_DEF[k];else r[k]=typeof o[k]==="number"?Math.max(0,Math.min(150,o[k])):SET_DEF[k]}return r})();
 /* nouvelle disposition par défaut (joystick à gauche, FEU à droite) : appliquée une fois à tous les téléphones */
 if(store("gpapi_set_v")!=="3"){if(store("gpapi_set_v")!=="2")SET.side="right";SET.zoom="70";try{store("gpapi_set",JSON.stringify(SET))}catch(e){}store("gpapi_set_v","3")}
@@ -554,17 +559,20 @@ var joy={on:false,id:null,dx:0,dy:0,x:0,y:0,r:52};
 var fb={on:false,id:null,x:0,y:0,r:38,energy:1,rest:0,flash:0};
 var sb={x:-999,y:-999,r:26},bb={x:-999,y:-999,r:24};
 function isLand(){return W>H*1.1}
-function fbPlace(){fb.r=50*U;var off=fb.r+18*U+(isLand()?20:0);fb.x=SET.side==="right"?W-off:off;fb.y=joy.y;sb.r=27*U;sb.x=fb.x;sb.y=fb.y-fb.r-sb.r-26*U;bb.r=24*U;bb.x=sb.x+(fb.x>W/2?-1:1)*(sb.r+bb.r+30*U);bb.y=sb.y;}
+function bsz(){return {s:.85,m:1,l:1.2}[SET.bsize]||1}
+function fbPlace(){fb.r=50*U*bsz();var off=fb.r+18*U+(isLand()?20:0);fb.x=SET.side==="right"?W-off:off;fb.y=joy.y;sb.r=27*U*bsz();sb.x=fb.x;sb.y=fb.y-fb.r-sb.r-26*U;bb.r=24*U*bsz();bb.x=sb.x+(fb.x>W/2?-1:1)*(sb.r+bb.r+30*U);bb.y=sb.y;}
 function joyPlace(){
-  var pb=parseFloat(getComputedStyle(document.documentElement).paddingBottom)||0;joy.r=52*U;
+  var pb=parseFloat(getComputedStyle(document.documentElement).paddingBottom)||0;joy.r=52*U*bsz();
   if(isLand()){
     /* paysage : joystick sur le côté opposé au bouton FEU (à droite par défaut), pour les deux pouces */
     var right=!(SET.fire==="manual"&&SET.side==="right"),off=joy.r+34*U+20;
-    joy.x=right?W-off:off;joy.y=H-joy.r-22*U-pb;
+    joy.x=right?W-off:off;joy.y=H-joy.r-22*U-pb;joy.hx=joy.x;joy.hy=joy.y;
   }else{
     /* portrait : joystick à droite (côté opposé au bouton FEU) */
-    var rt=!(SET.fire==="manual"&&SET.side==="right"),off2=joy.r+30*U;joy.x=rt?W-off2:off2;joy.y=H-joy.r-26*U-pb}
+    var rt=!(SET.fire==="manual"&&SET.side==="right"),off2=joy.r+30*U;joy.x=rt?W-off2:off2;joy.y=H-joy.r-26*U-pb;joy.hx=joy.x;joy.hy=joy.y}
 }
+/* moitié d'écran du joystick (l'autre moitié = tir) */
+function joySide(x){return (x<W/2)===(joy.hx<W/2)}
 function joySet(px,py){var dx=(px-joy.x)/joy.r,dy=(py-joy.y)/joy.r,l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}joy.dx=dx;joy.dy=dy}
 var keys={};
 addEventListener("keydown",function(e){keys[e.key]=1;if(e.key==="Shift")doDash();if(e.key==="b"||e.key==="B")triggerSuper();if(e.key==="v"||e.key==="V")dropBomb()});addEventListener("keyup",function(e){keys[e.key]=0});
@@ -1156,7 +1164,7 @@ function drawFire(){
 function drawJoy(){
   var x=joy.x,y=joy.y,r=joy.r,kx=x+joy.dx*r*.62,ky=y+joy.dy*r*.62;
   if(g){var cdk=g.dashCd>0?1-g.dashCd/2.2:1;cx.beginPath();cx.arc(x,y,r+5*U,-Math.PI/2,-Math.PI/2+Math.PI*2*cdk);cx.strokeStyle=cdk>=1?"rgba(61,240,255,.55)":"rgba(255,255,255,.18)";cx.lineWidth=3*U;cx.stroke();
-    if(cdk>=1&&g.t<25){cx.fillStyle="rgba(237,234,255,.55)";cx.font="700 "+Math.round(9*U)+"px 'Chakra Petch',sans-serif";cx.textAlign="center";cx.textBaseline="middle";cx.fillText("2 APPUIS = DASH",x,y-r-14*U)}}
+    if(cdk>=1&&g.t<25){cx.fillStyle="rgba(237,234,255,.55)";cx.font="700 "+Math.round(9*U)+"px 'Chakra Petch',sans-serif";cx.textAlign="center";cx.textBaseline="middle";cx.fillText(SET.flick==="on"?"GLISSE VITE = DASH":"2 APPUIS = DASH",x,y-r-14*U)}}
   cx.beginPath();cx.arc(x,y,r,0,7);cx.fillStyle=joy.on?"rgba(61,240,255,.07)":"rgba(255,255,255,.04)";cx.fill();
   cx.lineWidth=1.5*U;cx.strokeStyle=joy.on?"rgba(61,240,255,.45)":"rgba(255,255,255,.2)";cx.stroke();
   for(var i=0;i<4;i++){var a=i*Math.PI/2;cx.beginPath();cx.moveTo(x+Math.cos(a)*r*.78,y+Math.sin(a)*r*.78);cx.lineTo(x+Math.cos(a)*r*.9,y+Math.sin(a)*r*.9);cx.stroke()}
@@ -1165,6 +1173,9 @@ function drawJoy(){
 }
 function drawShip(){
   var x=g?g.px:W/2,y=g?g.py:(H+TOP)/2,r=16*S,b=g?g.bank:0,h=g?g.heading:-Math.PI/2;
+  /* halo de repérage : on retrouve toujours son vaisseau, même au milieu des explosions */
+  if(g){var hc=(g.skin||curShip()).col;cx.globalCompositeOperation="lighter";spr(glow(hc),x,y,74*S,.28);cx.globalCompositeOperation="source-over";
+    cx.beginPath();cx.arc(x,y,30*S,0,7);cx.strokeStyle=hc;cx.globalAlpha=.32+Math.sin(g.t*3)*.08;cx.lineWidth=1.6*S;cx.setLineDash([5*S,6*S]);cx.lineDashOffset=-g.t*20*S;cx.stroke();cx.setLineDash([]);cx.globalAlpha=1}
   if(g){cx.globalCompositeOperation="lighter";
     var TR=g.trailSk||TRAILS[0],gl=glow(TR.ls),gp=glow("#FF5CF0");
     g.trail.forEach(function(t,i){var k=i/g.trail.length;spr(glow(trailCol(TR,i,g.t)),t.x,t.y,(10+k*16)*S,k*.6)});cx.globalAlpha=1;
@@ -1305,11 +1316,17 @@ cv.addEventListener("pointerdown",function(e){e.preventDefault();if(isLand())goF
   if(g&&g.bombs>0&&Math.hypot(e.clientX-bb.x,e.clientY-bb.y)<bb.r*1.4){dropBomb();return}
   /* le joystick s'attrape dans une large zone autour du cercle */
   /* le doigt va au bouton FEU ou au joystick selon celui dont il est le plus près (zones larges, le doigt peut déborder) */
-  var nf=Math.hypot(e.clientX-fb.x,e.clientY-fb.y)/fb.r,nj=Math.hypot(e.clientX-joy.x,e.clientY-joy.y)/joy.r;
+  var nf=Math.hypot(e.clientX-fb.x,e.clientY-fb.y)/fb.r,nj=Math.hypot(e.clientX-joy.x,e.clientY-joy.y)/joy.r,inPlay=e.clientY>TOP+10*U;
+  /* tir maintenu : le pouce n'importe où sur la moitié « tir » de l'écran */
+  if(SET.hold==="on"&&inPlay&&!fb.on&&!joySide(e.clientX))nf=0;
+  /* joystick flottant : il se place sous le pouce, n'importe où sur sa moitié d'écran */
+  if(SET.fjoy==="on"&&inPlay&&!joy.on&&joySide(e.clientX)&&nf>=1.75){var m=joy.r*.6;joy.x=Math.max(m,Math.min(W-m,e.clientX));joy.y=Math.max(TOP+m,Math.min(H-m,e.clientY));nj=0}
   if(SET.fire==="manual"&&!fb.on&&nf<1.75&&(nf<nj||joy.on)){fb.on=true;fb.id=e.pointerId;if(g&&g.fireT>.02&&fb.energy>0)g.fireT=0;try{cv.setPointerCapture(e.pointerId)}catch(_){}return}
-  if(nj<1.7&&!joy.on){var nowT=performance.now();if(nowT-(joy.lastTap||0)<300)doDash();joy.lastTap=nowT;joy.on=true;joy.id=e.pointerId;joySet(e.clientX,e.clientY);try{cv.setPointerCapture(e.pointerId)}catch(_){}}},{passive:false});
-cv.addEventListener("pointermove",function(e){if(joy.on&&e.pointerId===joy.id)joySet(e.clientX,e.clientY)});
-function joyUp(e){if(e.pointerId===joy.id){joy.on=false;joy.id=null;joy.dx=joy.dy=0}if(e.pointerId===fb.id){fb.on=false;fb.id=null}}
+  if(nj<1.7&&!joy.on){var nowT=performance.now();if(nowT-(joy.lastTap||0)<300)doDash();joy.lastTap=nowT;joy.on=true;joy.id=e.pointerId;joy.t0=nowT;joy.sx=e.clientX;joy.sy=e.clientY;joy.fl=false;joySet(e.clientX,e.clientY);try{cv.setPointerCapture(e.pointerId)}catch(_){}}},{passive:false});
+cv.addEventListener("pointermove",function(e){if(joy.on&&e.pointerId===joy.id){joySet(e.clientX,e.clientY);
+  /* dash par glissement : un coup de pouce rapide et franc sur le joystick */
+  if(SET.flick==="on"&&!joy.fl&&performance.now()-joy.t0<150&&Math.hypot(e.clientX-joy.sx,e.clientY-joy.sy)>joy.r*1.2){joy.fl=true;doDash()}}});
+function joyUp(e){if(e.pointerId===joy.id){joy.on=false;joy.id=null;joy.dx=joy.dy=0;if(SET.fjoy==="on"&&joy.hx!==undefined){joy.x=joy.hx;joy.y=joy.hy}}if(e.pointerId===fb.id){fb.on=false;fb.id=null}}
 cv.addEventListener("pointerup",joyUp);cv.addEventListener("pointercancel",joyUp);
 
 /* ---------- Vaisseaux à débloquer et série quotidienne (mémorisés sur le téléphone) ---------- */
@@ -1784,6 +1801,8 @@ $("hQuit").onclick=function(){if(g&&g.run){if(!g.paused){g.paused=true;musStop()
 $("bQuitNo").onclick=function(){audio();resume()};
 $("bQuitYes").onclick=function(){if(g){g.run=false;g.paused=false}musStop();joy.on=false;joy.dx=joy.dy=0;fb.on=false;g=null;$("combo").textContent="";syncBest();show("scrStart")};
 document.addEventListener("visibilitychange",function(){if(document.hidden)pause()});
+/* pause automatique : appel, notification, changement d'application, écran éteint */
+window.addEventListener("blur",function(){setTimeout(function(){if(!document.hasFocus()||document.hidden)pause()},450)});window.addEventListener("pagehide",function(){pause()});
 $("bShare").onclick=function(){SFX.pick&&SFX.pick();shareScore()};
 $("bOverMenu").onclick=function(){syncDefi();syncBest();syncStreak();syncShipBtn();syncBadgeBtn();show("scrStart")};
 $("bShip").onclick=function(){audio();renderHangar();show("scrShip")};
