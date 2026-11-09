@@ -2,12 +2,12 @@
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
  * Description: Mini-jeux pour les tables (QR code) : Arena Defender, GoSpace, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.9.1
+ * Version: 1.9.2
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.9.1' );
+define( 'GPAJ_VER', '1.9.2' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
@@ -94,13 +94,18 @@ add_action( 'template_redirect', function () {
 	foreach ( array_keys( gpaj_games() ) as $k ) { $map[ 'jeu/' . $k ] = $k; }
 	if ( ! isset( $map[ $path ] ) ) { return; }
 	$file = gpaj_games()[ $map[ $path ] ];
+	/* la page du jeu ne doit jamais être gardée en cache (LiteSpeed / cache serveur), sinon les joueurs restent sur une ancienne version */
+	if ( ! defined( 'DONOTCACHEPAGE' ) ) { define( 'DONOTCACHEPAGE', true ); }
+	do_action( 'litespeed_control_set_nocache', 'GoPlay mini-jeu' );
 	status_header( 200 );
 	nocache_headers();
+	header( 'X-LiteSpeed-Cache-Control: no-cache' );
 	header( 'Content-Type: text/html; charset=utf-8' );
 	echo '<!doctype html><html lang="fr"><head><meta charset="utf-8">'
 		. '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">'
 		. '<style>:root{color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>'
 		. gpaj_head_icons( $map[ $path ] )
+		. '<meta name="gpaj-version" content="' . esc_attr( (string) get_option( 'gpaj_remote_ver' ) ) . ' / ' . GPAJ_VER . '">'
 		. '<script>window.GPAJ_HOME=' . wp_json_encode( gpaj_home_url( $map[ $path ] ) ) . ';</script>'
 		. '</head><body>';
 	$up = gpaj_dir() . $file;
@@ -263,6 +268,9 @@ function gpaj_sync( $force = false, $ref = 'main' ) {
 	update_option( 'gpaj_extra_games', $extra, false );
 	update_option( 'gpaj_remote_ver', $m['version'], false );
 	update_option( 'gpaj_synced_at', time(), false );
+	/* vide le cache des pages pour que la nouvelle version s'affiche tout de suite */
+	do_action( 'litespeed_purge_all' );
+	if ( function_exists( 'wp_cache_flush' ) ) { wp_cache_flush(); }
 	return 'Jeux mis à jour : version ' . esc_html( $m['version'] ) . ' (' . count( $got ) . ' fichiers).' . $plug;
 }
 
