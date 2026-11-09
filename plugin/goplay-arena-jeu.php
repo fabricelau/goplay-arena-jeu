@@ -2,12 +2,12 @@
 /**
  * Plugin Name: GoPlay Arena – Jeu Arena Defender
  * Description: Mini-jeux pour les tables (QR code) : Arena Defender, GoSpace, Pixel Rush, Laser Reflex, Target Chain, Memory Grid, Color Switch, avec classements du jour et de tous les temps.
- * Version: 1.9.2
+ * Version: 1.9.3
  * Author: GoPlay Arena
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'GPAJ_VER', '1.9.2' );
+define( 'GPAJ_VER', '1.9.3' );
 
 /* jeu => fichier */
 function gpaj_base_games() { return array( 'arena' => 'game.html', 'pilot' => 'pilot.html', 'pixel' => 'pixel.html', 'laser' => 'laser.html', 'chain' => 'chain.html', 'memory' => 'memory.html', 'color' => 'color.html' ); }
@@ -314,6 +314,12 @@ add_action( 'admin_menu', function () {
 	add_management_page( 'Mini-jeux', 'Mini-jeux GoPlay', 'manage_options', 'gpa-jeu', 'gpaj_admin' );
 } );
 
+/* après une mise à jour de l'extension : on vide une fois le cache des pages pour que tout le monde reçoive la nouvelle version */
+add_action( 'init', function () {
+	if ( get_option( 'gpaj_purged_ver' ) === GPAJ_VER ) { return; }
+	update_option( 'gpaj_purged_ver', GPAJ_VER, false );
+	do_action( 'litespeed_purge_all' );
+} );
 /* Nettoyage ponctuel demandé : retirer le score de 52 387 pts de GoSpace (classements tout temps et jours récents) */
 add_action( 'init', function () {
 	if ( get_option( 'gpaj_clean_52387' ) ) { return; }
