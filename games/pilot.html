@@ -385,11 +385,11 @@ function renderBoard(el){
 function fmt(n){return Math.round(n).toLocaleString("fr-FR")}
 
 /* ---------- Réglages (mémorisés sur le téléphone) ---------- */
-var SET_DEF={move:60,turn:60,music:60,sfx:80,cad:100,fire:"manual",side:"right",vib:"on",zoom:"78"};
+var SET_DEF={move:60,turn:60,music:60,sfx:80,cad:100,fire:"manual",side:"right",vib:"on",zoom:"70"};
 var SET_OPT={fire:["manual"],side:["left","right"],vib:["on","off"],zoom:["100","85","78","70"]}; /* tir automatique retiré : un ancien réglage « auto » revient au bouton FEU */
 var SET=(function(){var o={};try{o=JSON.parse(store("gpapi_set")||"{}")||{}}catch(e){}var r={};for(var k in SET_DEF){if(SET_OPT[k])r[k]=SET_OPT[k].indexOf(o[k])>=0?o[k]:SET_DEF[k];else r[k]=typeof o[k]==="number"?Math.max(0,Math.min(150,o[k])):SET_DEF[k]}return r})();
 /* nouvelle disposition par défaut (joystick à gauche, FEU à droite) : appliquée une fois à tous les téléphones */
-if(store("gpapi_set_v")!=="2"){SET.side="right";try{store("gpapi_set",JSON.stringify(SET))}catch(e){}store("gpapi_set_v","2")}
+if(store("gpapi_set_v")!=="3"){if(store("gpapi_set_v")!=="2")SET.side="right";SET.zoom="70";try{store("gpapi_set",JSON.stringify(SET))}catch(e){}store("gpapi_set_v","3")}
 var BUS=null;
 function sfxBus(){if(!AC)return null;if(!BUS){BUS=AC.createGain();BUS.connect(AC.destination)}BUS.gain.value=SET.sfx/100;return BUS}
 function musGain(){return 1.35*SET.music/100}
@@ -570,7 +570,7 @@ var keys={};
 addEventListener("keydown",function(e){keys[e.key]=1;if(e.key==="Shift")doDash();if(e.key==="b"||e.key==="B")triggerSuper();if(e.key==="v"||e.key==="V")dropBomb()});addEventListener("keyup",function(e){keys[e.key]=0});
 
 /* ---------- Canvas ---------- */
-var cv=$("c"),cx=cv.getContext("2d",{alpha:false,desynchronized:true}),W=0,H=0,DPR=1,S=1,U=1,ZOOM=.78,TOP=70,stars=[],bg=null;
+var cv=$("c"),cx=cv.getContext("2d",{alpha:false,desynchronized:true}),W=0,H=0,DPR=1,S=1,U=1,ZOOM=.7,TOP=70,stars=[],bg=null;
 /* qualité adaptative : on part de 1,75 et on baisse la résolution si le téléphone n'arrive pas à suivre */
 /* Qualité automatique : téléphones modestes = résolution réduite d'office ; si ça rame, on allège les effets (lv 2 → 1 → 0) puis la résolution */
 var WEAK=((navigator.hardwareConcurrency||8)<=4)||(navigator.deviceMemory&&navigator.deviceMemory<=3);
@@ -607,7 +607,7 @@ function resize(){
   DPR=Q.scale;W=innerWidth;H=innerHeight;
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cx.setTransform(DPR,0,0,DPR,0,0);
   /* U = taille des commandes (joystick, boutons) ; S = taille du monde, réduite par ZOOM pour voir plus loin */
-  ZOOM=(+SET.zoom||78)/100;U=Math.max(.85,Math.min(1.5,Math.min(W,H)/400));S=U*ZOOM;
+  ZOOM=(+SET.zoom||70)/100;U=Math.max(.85,Math.min(1.5,Math.min(W,H)/400));S=U*ZOOM;
   joyPlace();fbPlace();
   stars=[];for(var i=0;i<[45,75,110][Q.lv];i++)stars.push({x:Math.random()*W,y:Math.random()*H,z:.2+Math.random()*1.6,c:Math.random()<.15?"#3DF0FF":Math.random()<.2?"#FF5CF0":"#AFA9EC"});
   buildBg(g?tierOf(g.wave):0);
@@ -1763,7 +1763,7 @@ function fillSet(){syncChoice();["move","turn","music","sfx","cad"].forEach(func
     if(k==="music"&&MUS.out){try{MUS.out.gain.setTargetAtTime(musGain(),AC.currentTime,.05)}catch(e){}if(SET.music<=0)musStop()}
   });
 });
-function syncChoice(){document.querySelectorAll("[data-set]").forEach(function(b){b.setAttribute("aria-pressed",String(SET[b.dataset.set]===b.dataset.v))});$("row_side").hidden=SET.fire!=="manual";if(W&&(+SET.zoom||78)/100!==ZOOM)rezoom();joyPlace();fbPlace()}
+function syncChoice(){document.querySelectorAll("[data-set]").forEach(function(b){b.setAttribute("aria-pressed",String(SET[b.dataset.set]===b.dataset.v))});$("row_side").hidden=SET.fire!=="manual";if(W&&(+SET.zoom||70)/100!==ZOOM)rezoom();joyPlace();fbPlace()}
 document.querySelectorAll("[data-set]").forEach(function(b){b.addEventListener("click",function(){SET[b.dataset.set]=b.dataset.v;saveSet();syncChoice();audio();SFX.pick()})});
 /* changement de vue en cours de partie : on remet à l'échelle tout ce qui est déjà à l'écran */
 function rezoom(){var old=S;resize();if(!g||!old)return;var k=S/old,cxm=W/2,cym=(H+TOP)/2;
