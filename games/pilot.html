@@ -236,7 +236,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-o
     <div class="col colB">
     <div class="fstip" id="fsTip" hidden><span><b>Plein écran sur iPhone :</b> touche Partager <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8" fill="none" stroke="currentColor" stroke-width="2"/></svg> puis « Sur l'écran d'accueil ». GoSpace s'ouvrira sans la barre de Safari.</span><button type="button" id="fsTipX" aria-label="Masquer l'astuce">✕</button></div>
     <div class="best" id="sBest"></div>
-    <div class="defi" id="sDefi"></div>
     <div class="streak" id="sStreak"></div>
     <button class="play" id="bPlay">JOUER</button>
     <button class="ghost surv" id="bSurv" type="button">☠ MODE SURVIE · 1 seule vie</button>
@@ -647,7 +646,7 @@ function newGame(){
 }
 function startWave(w){
   g.wave=w;g.waveT=0;g.hitWave=false;
-  if(g.mode!=="surv"&&w===DEFI_GOAL&&defiWin()){g.defiNew=true;setTimeout(function(){if(g&&g.run){g.banner={txt:"DÉFI RÉUSSI !",sub:DF.n+" · reviens demain",t:2.6};SFX.badge();buzz([40,40,40,40,160])}},2700)}$("hWave").textContent=w;
+  if(false&&w===DEFI_GOAL&&defiWin()){g.defiNew=true;setTimeout(function(){if(g&&g.run){g.banner={txt:"DÉFI RÉUSSI !",sub:DF.n+" · reviens demain",t:2.6};SFX.badge();buzz([40,40,40,40,160])}},2700)}$("hWave").textContent=w;
   var boss=w%5===0;
   g.toSpawn=boss?Math.floor(w/2):7+w*2;g.spawnI=Math.max(.32,1.15-w*.07);g.spawnT=.8;g.between=0;g.bossOn=false;
   setTier(tierOf(w));
@@ -1389,7 +1388,7 @@ var TRAILS=[
  {k:"or",n:"Or pur",tr:["#FFC22E","#FFE98A"],ls:"#FFD53D",cond:"30 000 points en une partie",ok:function(p){return p.maxScore>=30000}},
  {k:"aurore",n:"Aurore",tr:["#3DF0FF","#7CFFB0","#FF5CF0"],ls:"#7CFFB0",cond:"Jouer 50 parties",ok:function(p){return p.games>=50}},
  {k:"supernova",n:"Supernova",tr:["#FFFFFF","#FFC22E","#FF5CF0"],ls:"#FFFFFF",cond:"Atteindre la vague 18",ok:function(p){return p.bestWave>=18}},
- {k:"arcenciel",n:"Arc-en-ciel",rain:1,tr:["#FF3D3D","#FFB020","#FFE03D","#4DFF7A","#3DF0FF","#5A6BFF","#C64BFF"],ls:"#FFFFFF",cond:"Réussir 3 défis du jour",ok:function(){return defiCount()>=3}}
+ {k:"arcenciel",n:"Arc-en-ciel",rain:1,tr:["#FF3D3D","#FFB020","#FFE03D","#4DFF7A","#3DF0FF","#5A6BFF","#C64BFF"],ls:"#FFFFFF",cond:"Atteindre la vague 25",ok:function(p){return p.bestWave>=25}}
 ];
 function curTrail(){var p=prog();for(var i=0;i<TRAILS.length;i++)if(TRAILS[i].k===p.trail&&TRAILS[i].ok(p))return TRAILS[i];return TRAILS[0]}
 function trailCol(T,i,t){var a=T.tr;if(a.length===1)return a[0];if(T.rain)return a[(Math.floor(t*8)+i)%a.length];return a[i%a.length]}
@@ -1638,13 +1637,14 @@ var MODE="arcade";
 function maxLives(){return g&&g.mode==="surv"?1:(DF.maxL||3)}
 function autoCard(){var pool=CARDS.filter(function(c){return c.ok()});if(!pool.length)return;var c=pool[Math.floor(Math.random()*pool.length)];c.go();g.cards++;SFX.power();g.banner={txt:"AMÉLIORATION",sub:c.n+" · "+c.d,t:1.8}}
 function dayNum(){var p=dayStr(0).split("-");return Math.floor(Date.UTC(+p[0],+p[1]-1,+p[2])/864e5)}
-function defiToday(){var i=((dayNum()*5+3)%DEFIS.length+DEFIS.length)%DEFIS.length;return DEFIS[i]}
-var DF=defiToday();
+function defiToday(){return {};}
+function defiTodayOld(){var i=((dayNum()*5+3)%DEFIS.length+DEFIS.length)%DEFIS.length;return DEFIS[i]}
+var DF={};
 function defiData(){var o={};try{o=JSON.parse(store("gpapi_defi")||"{}")||{}}catch(e){}o.days=o.days||{};return o}
 function defiDone(){return !!defiData().days[dayStr(0)]}
 function defiCount(){return Object.keys(defiData().days).length}
 function defiWin(){var o=defiData(),t=dayStr(0);if(o.days[t])return false;o.days[t]=DF.k;store("gpapi_defi",JSON.stringify(o));return true}
-function syncDefi(){DF=defiToday();var el=$("sDefi");if(!el)return;el.textContent="";
+function syncDefi(){DF={};var el=$("sDefi");if(el)el.hidden=true;return;if(!el)return;el.textContent="";
   var a=document.createElement("div");a.className="dtop";a.textContent="DÉFI DU JOUR";var dn=document.createElement("strong");dn.textContent=DF.n;
   var dd=document.createElement("span");dd.textContent=DF.d+" · "+DF.x;var st=document.createElement("em");
   st.textContent=defiDone()?"✓ Défi réussi aujourd'hui · reviens demain pour le suivant":"Objectif : atteindre la vague "+DEFI_GOAL;if(defiDone())st.className="ok";
